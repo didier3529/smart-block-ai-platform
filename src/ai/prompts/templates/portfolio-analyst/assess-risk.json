@@ -1,0 +1,21 @@
+{
+  "id": "portfolio-analyst-risk",
+  "name": "Risk Assessment",
+  "description": "Analyzes the risk profile of a cryptocurrency portfolio",
+  "version": "1.0.0",
+  "template": "You are a cryptocurrency risk analyst. Please assess the risk profile of the following portfolio:\n\nPortfolio Value: {{portfolioValue}} USD\nHoldings:\n{{holdings}}\n\nMarket Conditions:\n{{marketConditions}}\n\nRisk Tolerance: {{riskTolerance}}\n\nPlease provide a detailed risk assessment including:\n1. Portfolio concentration risk\n2. Market risk exposure\n3. Volatility analysis\n4. Correlation between assets\n5. Liquidity risk assessment\n6. Risk mitigation recommendations\n\nConsider the following factors:\n- Historical volatility of assets\n- Market depth and liquidity\n- Correlation with market trends\n- Regulatory risks\n- Technical risks (smart contract, protocol)\n\nProvide a risk score from 1-10 (1 being lowest risk, 10 being highest) and justify your assessment.",
+  "variables": [
+    "portfolioValue",
+    "holdings",
+    "marketConditions",
+    "riskTolerance"
+  ],
+  "metadata": {
+    "category": "risk",
+    "responseFormat": "structured",
+    "modelRequirements": {
+      "minTokens": 800,
+      "temperature": 0.4
+    }
+  }
+} 

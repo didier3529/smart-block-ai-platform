@@ -1,0 +1,173 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Base spacing units */
+    --spacing-xs: 0.25rem;  /* 4px */
+    --spacing-sm: 0.5rem;   /* 8px */
+    --spacing-md: 1rem;     /* 16px */
+    --spacing-lg: 1.5rem;   /* 24px */
+    --spacing-xl: 2rem;     /* 32px */
+    --spacing-2xl: 3rem;    /* 48px */
+    
+    /* Layout constants */
+    --sidebar-width: 16rem;
+    --header-height: 4rem;
+    --content-max-width: 90rem;
+    --section-spacing: 2rem;
+    
+    /* Radii */
+    --radius-sm: 0.5rem;
+    --radius-md: 0.75rem;
+    --radius-lg: 1rem;
+    
+    /* Z-indices */
+    --z-header: 40;
+    --z-sidebar: 30;
+    --z-overlay: 50;
+    --z-modal: 60;
+    --z-toast: 70;
+  }
+}
+
+@layer components {
+  /* Global layout classes */
+  .page-container {
+    @apply min-h-screen bg-background text-foreground;
+  }
+
+  .content-container {
+    @apply w-full max-w-[var(--content-max-width)] mx-auto px-6;
+  }
+
+  .section-container {
+    @apply py-[var(--section-spacing)];
+  }
+
+  /* Card styles */
+  .card {
+    @apply bg-card rounded-[var(--radius-md)] border border-border p-6 transition-all duration-200
+           hover:border-border/60 hover:shadow-sm;
+  }
+
+  .data-card {
+    @apply card flex flex-col gap-4;
+  }
+
+  /* Grid layouts */
+  .grid-cols-auto-fill {
+    @apply grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4;
+  }
+
+  /* Stats and data display */
+  .stat-container {
+    @apply flex flex-col gap-2;
+  }
+
+  .stat-value {
+    @apply text-2xl font-semibold tracking-tight;
+  }
+
+  .stat-label {
+    @apply text-sm font-medium text-muted-foreground;
+  }
+
+  /* Table styles */
+  .table-container {
+    @apply w-full overflow-x-auto rounded-[var(--radius-md)] border border-border;
+  }
+
+  .table-row {
+    @apply border-b border-border transition-colors hover:bg-muted/50;
+  }
+
+  .table-cell {
+    @apply p-4 align-middle [&:has([role=checkbox])]:pr-0;
+  }
+
+  /* Form elements */
+  .form-group {
+    @apply space-y-2;
+  }
+
+  .form-label {
+    @apply text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70;
+  }
+
+  /* Responsive utilities */
+  .hide-scrollbar {
+    @apply scrollbar-hide;
+  }
+
+  /* Animation utilities */
+  .animate-in {
+    @apply transition-all duration-300 ease-in-out;
+  }
+
+  /* Gradient text classes */
+  .gradient-text {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-blue-600;
+  }
+  
+  .gradient-text-purple {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-fuchsia-600;
+  }
+  
+  .gradient-text-blue {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-cyan-600;
+  }
+  
+  .gradient-text-orange {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-orange-400 to-amber-600;
+  }
+  
+  /* Gradient background classes */
+  .gradient-purple {
+    @apply bg-gradient-to-br from-purple-600 to-fuchsia-700;
+  }
+  
+  .gradient-blue {
+    @apply bg-gradient-to-br from-blue-600 to-cyan-700;
+  }
+  
+  .gradient-teal {
+    @apply bg-gradient-to-br from-teal-600 to-cyan-700;
+  }
+  
+  .gradient-orange {
+    @apply bg-gradient-to-br from-orange-600 to-amber-700;
+  }
+  
+  .gradient-phantom {
+    @apply bg-gradient-to-br from-purple-600 via-blue-600 to-cyan-600;
+  }
+  
+  .gradient-purple-blue {
+    @apply bg-gradient-to-br from-purple-600 to-blue-600;
+  }
+  
+  /* Animation for glowing elements */
+  .animate-pulse-glow {
+    animation: pulse-glow 3s infinite;
+  }
+  
+  @keyframes pulse-glow {
+    0%, 100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.7;
+    }
+  }
+}
+
+/* Reset styles */
+* {
+  @apply border-border;
+}
+
+body {
+  @apply bg-background text-foreground antialiased;
+} 

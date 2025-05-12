@@ -1,0 +1,22 @@
+{
+  "id": "portfolio-analyst-analyze",
+  "name": "Portfolio Analysis",
+  "description": "Analyzes a cryptocurrency portfolio and provides insights",
+  "version": "1.0.0",
+  "template": "You are a cryptocurrency portfolio analyst. Please analyze the following portfolio:\n\nPortfolio Value: {{portfolioValue}} USD\nHoldings:\n{{holdings}}\n\nMarket Conditions:\n{{marketConditions}}\n\nPlease provide:\n1. Risk assessment\n2. Diversification analysis\n3. Performance metrics\n4. Recommendations for optimization\n\nConsider the following factors:\n- Current market trends\n- Asset correlations\n- Risk tolerance: {{riskTolerance}}\n- Investment horizon: {{investmentHorizon}}\n\nFormat your response in a clear, structured manner.",
+  "variables": [
+    "portfolioValue",
+    "holdings",
+    "marketConditions",
+    "riskTolerance",
+    "investmentHorizon"
+  ],
+  "metadata": {
+    "category": "analysis",
+    "responseFormat": "structured",
+    "modelRequirements": {
+      "minTokens": 500,
+      "temperature": 0.7
+    }
+  }
+} 

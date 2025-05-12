@@ -1,0 +1,39 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  walletAddress String?   @unique
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  settings      UserSettings?
+
+  @@map("users")
+}
+
+model UserSettings {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id])
+  theme     String   @default("dark")
+  layout    String   @default("default")
+  notifications Json @default("{\"email\":true,\"push\":true,\"desktop\":true,\"priceAlerts\":true,\"securityAlerts\":true,\"marketUpdates\":false,\"newFeatures\":true}")
+  security  Json     @default("{\"twoFactorEnabled\":false,\"loginAlerts\":true,\"autoLockTimeout\":\"15\"}")
+  profile   Json     @default("{\"name\":\"\",\"email\":\"\",\"username\":\"\",\"walletAddress\":\"\"}")
+  apiKeys   Json     @default("{\"key\":\"\",\"lastGenerated\":\"\"}")
+  billing   Json     @default("{\"plan\":\"free\",\"cycle\":\"monthly\",\"nextBilling\":\"\",\"amount\":0}")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("user_settings")
+} 
