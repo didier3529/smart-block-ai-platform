@@ -1,8 +1,7 @@
-import { CMC_API_KEY } from '@/config/api-keys';
-import { WebSocketConfig } from '@/config/websocket-config';
+import { PriceFetcherConfig } from '@/config/price-fetcher-config';
 import { Cache } from '@/lib/cache';
 import { EventEmitter } from 'events';
-import { MockWebSocket } from './mock-websocket';
+import { PriceFetcher } from './price-fetcher';
 
 export interface MarketPrice {
   current: number;
@@ -11,25 +10,39 @@ export interface MarketPrice {
   volume24h: number;
   marketCap: number;
   lastUpdated: number;
+  symbol?: string;
+  isMock?: boolean;
 }
 
-export interface MarketDataConfig {
-  apiKey: string;
+export interface MarketApiConfig {
+  apiKey?: string;
   baseUrl: string;
-  wsUrl: string;
   cacheTTL: number;
 }
+
+const formatSymbolForBinance = (symbol: string): string => {
+  if (symbol.toUpperCase().endsWith('USDT')) {
+    return symbol.toUpperCase();
+  }
+  return `${symbol.toUpperCase()}USDT`;
+};
+
+const parseBinanceSymbol = (binanceSymbol: string): string => {
+  if (binanceSymbol.toUpperCase().endsWith('USDT')) {
+    return binanceSymbol.toUpperCase().replace('USDT', '');
+  }
+  return binanceSymbol.toUpperCase();
+};
 
 class MarketDataAdapter extends EventEmitter {
   private static instance: MarketDataAdapter;
   private cache: Cache;
-  private wsConnection: WebSocket | null = null;
-  private config: MarketDataConfig;
-  private reconnectAttempts = 0;
-  private readonly MAX_RECONNECT_ATTEMPTS = 5;
-  private readonly RECONNECT_INTERVAL = 5000;
+  private apiConfig: MarketApiConfig;
+  private priceFetcher: PriceFetcher;
+  private subscribedSymbols: Set<string> = new Set();
+  private wsSendFunction: ((message: string) => void) | null = null;
+  private currentWsId = 1;
 
-  // Mock data for fallback when API calls fail
   private mockPriceData: Record<string, MarketPrice> = {
     'BTC': {
       current: 102982.57,
@@ -84,18 +97,16 @@ class MarketDataAdapter extends EventEmitter {
   private constructor() {
     super();
     this.cache = new Cache({
-      ttl: 30000, // 30 seconds default TTL
+      ttl: PriceFetcherConfig.cacheTTL,
       maxSize: 1000,
     });
 
-    this.config = {
-      apiKey: CMC_API_KEY,
-      baseUrl: 'https://pro-api.coinmarketcap.com/v1',
-      wsUrl: 'wss://stream.coinmarketcap.com/price/latest',
-      cacheTTL: 30000,
+    this.apiConfig = {
+      baseUrl: PriceFetcherConfig.baseUrl,
+      cacheTTL: PriceFetcherConfig.cacheTTL,
     };
 
-    this.initializeWebSocket();
+    this.priceFetcher = PriceFetcher.getInstance();
   }
 
   public static getInstance(): MarketDataAdapter {
@@ -105,296 +116,180 @@ class MarketDataAdapter extends EventEmitter {
     return MarketDataAdapter.instance;
   }
 
+  public setWsSendFunction(sendFunction: (message: string) => void): void {
+    this.wsSendFunction = sendFunction;
+  }
+
   private async fetchPriceData(symbol: string): Promise<MarketPrice> {
     try {
-      // Always use mock data in development or when mock mode is enabled
-      if (process.env.NODE_ENV === 'development' || WebSocketConfig.useMock) {
-        console.log(`🚀 Using MOCK price data for ${symbol}`);
-        // Return mock data if available for this symbol
-        if (this.mockPriceData[symbol]) {
-          // Update the lastUpdated timestamp
-          this.mockPriceData[symbol].lastUpdated = Date.now();
-          return this.mockPriceData[symbol];
+      if (PriceFetcherConfig.verbose) {
+        console.log(`[MarketAdapter] fetchPriceData: Attempting to fetch for symbol: ${symbol}`);
+      }
+
+      const priceDataMap = await this.priceFetcher.getPrices([symbol]);
+      const price = priceDataMap.get(symbol);
+
+      if (PriceFetcherConfig.verbose) {
+        console.log(`[MarketAdapter] fetchPriceData: Data received from priceFetcher.getPrices for API key '${symbol}':`, price);
+      }
+
+      if (!price || typeof price.current !== 'number' || price.current < 0) {
+        if (PriceFetcherConfig.verbose) {
+          console.warn(`[MarketAdapter] fetchPriceData: No valid price data (price object missing, current price not a non-negative number) for ${symbol}. Price object was:`, price, "Returning mock.");
         }
-        
-        // Generate random mock data for unknown symbols
         return {
-          current: Math.random() * 1000,
-          historical: Math.random() * 900,
-          change24h: Math.random() * 10,
-          volume24h: Math.random() * 10000000000,
-          marketCap: Math.random() * 100000000000,
-          lastUpdated: Date.now()
+          symbol,
+          current: 0,
+          historical: 0,
+          change24h: 0,
+          volume24h: 0,
+          marketCap: 0,
+          lastUpdated: Date.now(),
+          isMock: true
         };
       }
-      
-      // Try the real API call
-      const response = await fetch(
-        `${this.config.baseUrl}/cryptocurrency/quotes/latest?symbol=${symbol}`,
-        {
-          headers: {
-            'X-CMC_PRO_API_KEY': this.config.apiKey,
-            'Accept': 'application/json',
-          },
-        }
-      );
 
-      if (!response.ok) {
-        throw new Error(`Failed to fetch price data for ${symbol}`);
+      if (PriceFetcherConfig.verbose) {
+        console.log(`[MarketAdapter] fetchPriceData: Valid price data found for ${symbol}. Current: ${price.current}, Historical: ${price.historical}`);
       }
 
-      const data = await response.json();
-      const quote = data.data[symbol].quote.USD;
-
       return {
-        current: quote.price,
-        historical: quote.price / (1 + quote.percent_change_24h / 100),
-        change24h: quote.percent_change_24h,
-        volume24h: quote.volume_24h,
-        marketCap: quote.market_cap,
-        lastUpdated: new Date(quote.last_updated).getTime(),
+        symbol,
+        current: price.current,
+        historical: price.historical,
+        change24h: price.historical !== 0 ? ((price.current - price.historical) / price.historical) * 100 : 0,
+        volume24h: price.volume || 0,
+        marketCap: price.current * (price.volume || 0),
+        lastUpdated: price.lastUpdate ? new Date(price.lastUpdate).getTime() : Date.now(),
+        isMock: false
       };
     } catch (error) {
-      console.error(`Error fetching price for ${symbol}:`, error);
-      
-      // Fallback to mock data on error
-      console.log(`🚀 Falling back to MOCK price data for ${symbol} due to fetch error`);
-      
-      // Return mock data if available for this symbol
-      if (this.mockPriceData[symbol]) {
-        // Update the lastUpdated timestamp
-        this.mockPriceData[symbol].lastUpdated = Date.now();
-        return this.mockPriceData[symbol];
+      if (PriceFetcherConfig.verbose) {
+        console.error(`[MarketAdapter] Error fetching price for ${symbol}:`, error);
       }
-      
-      // Generate random mock data for unknown symbols
       return {
-        current: Math.random() * 1000,
-        historical: Math.random() * 900,
-        change24h: Math.random() * 10,
-        volume24h: Math.random() * 10000000000,
-        marketCap: Math.random() * 100000000000,
-        lastUpdated: Date.now()
+        symbol,
+        current: 0,
+        historical: 0,
+        change24h: 0,
+        volume24h: 0,
+        marketCap: 0,
+        lastUpdated: Date.now(),
+        isMock: true
       };
     }
   }
 
   public async getPrice(symbol: string): Promise<MarketPrice> {
     const cacheKey = `price:${symbol}`;
-    const cachedData = this.cache.get(cacheKey);
+    // const cachedData = this.cache.get(cacheKey) as MarketPrice | undefined; // Temporarily bypass cache
 
-    if (cachedData && Date.now() - cachedData.lastUpdated < this.config.cacheTTL) {
-      return cachedData;
+    // Temporarily bypass cache check to force re-fetch from PriceFetcher via fetchPriceData
+    // if (cachedData && Date.now() - cachedData.lastUpdated < (this.apiConfig.cacheTTL)) {
+    //   if (PriceFetcherConfig.verbose) {
+    //     console.log(`[MarketAdapter] Returning cached price for ${symbol}`);
+    //   }
+    //   return cachedData;
+    // }
+
+    if (PriceFetcherConfig.verbose) {
+      console.log(`[MarketAdapter] getPrice: Cache miss or forced re-fetch for ${symbol}. Fetching new price.`);
     }
-
     const priceData = await this.fetchPriceData(symbol);
-    this.cache.set(cacheKey, priceData);
+    this.cache.set(cacheKey, priceData); // Still update the cache after fetching
     return priceData;
   }
 
-  private initializeWebSocket(): void {
-    if (typeof window === 'undefined') return; // Don't initialize WS on server-side
-
-    try {
-      // Use mock WebSocket if configured, otherwise use real WebSocket
-      if (WebSocketConfig.useMock) {
-        console.log('Using MockWebSocket for development');
-        this.wsConnection = new MockWebSocket(this.config.wsUrl) as unknown as WebSocket;
-      } else {
-        this.wsConnection = new WebSocket(this.config.wsUrl);
-      }
-
-      this.wsConnection.onopen = () => {
-        this.reconnectAttempts = 0;
-        this.emit('connected');
-        console.log('WebSocket connection established');
-        
-        // Subscribe to default symbols if configured
-        if (WebSocketConfig.defaultSymbols && WebSocketConfig.defaultSymbols.length > 0) {
-          WebSocketConfig.defaultSymbols.forEach(symbol => this.subscribe(symbol));
-        }
+  public handleWebSocketMessage(jsonData: any): void {
+    if (jsonData.e === '24hrTicker') {
+      const symbol = parseBinanceSymbol(jsonData.s);
+      const marketPrice: MarketPrice = {
+        symbol: symbol,
+        current: parseFloat(jsonData.c),
+        historical: parseFloat(jsonData.o),
+        change24h: parseFloat(jsonData.P),
+        volume24h: parseFloat(jsonData.v),
+        marketCap: parseFloat(jsonData.c) * parseFloat(jsonData.v),
+        lastUpdated: jsonData.E,
       };
-
-      // Setup connection timeout
-      const connectionTimeoutId = setTimeout(() => {
-        if (this.wsConnection && this.wsConnection.readyState !== WebSocket.OPEN) {
-          console.log('WebSocket connection timeout');
-          
-          // Create a timeout error event
-          const timeoutEvent = new Event('error');
-          if (this.wsConnection.onerror) {
-            this.wsConnection.onerror.call(this.wsConnection, timeoutEvent);
-          }
-          
-          // Close the connection and try to reconnect
-          if (this.wsConnection.readyState !== WebSocket.CLOSED) {
-            this.wsConnection.close();
-          }
-          this.handleReconnect();
-        }
-      }, WebSocketConfig.connectionTimeout);
-
-      this.wsConnection.onmessage = (event) => {
-        try {
-          const data = JSON.parse(event.data);
-          this.handlePriceUpdate(data);
-        } catch (error) {
-          console.error('WebSocket message parsing error:', error);
-        }
-      };
-
-      this.wsConnection.onclose = (event) => {
-        clearTimeout(connectionTimeoutId);
-        console.log(`WebSocket closed with code: ${event.code}, reason: ${event.reason}`);
-        this.emit('disconnected', { code: event.code, reason: event.reason });
-        this.handleReconnect();
-      };
-
-      this.wsConnection.onerror = (error) => {
-        clearTimeout(connectionTimeoutId);
-        // Create a more detailed error object for debugging
-        const errorDetail = {
-          message: 'WebSocket connection error',
-          timestamp: new Date().toISOString(),
-          reconnectAttempts: this.reconnectAttempts,
-          url: this.config.wsUrl,
-          error: this.serializeError(error)
-        };
-        
-        console.error('WebSocket error:', errorDetail);
-        this.emit('error', errorDetail);
-      };
-    } catch (error) {
-      console.error('Failed to initialize WebSocket:', error);
-      this.emit('error', { 
-        message: 'Failed to initialize WebSocket connection',
-        originalError: this.serializeError(error)
-      });
-      this.handleReconnect();
-    }
-  }
-  
-  /**
-   * Helper method to safely serialize an error object
-   */
-  private serializeError(error: any): any {
-    if (!error) return { message: 'Unknown error (empty error object)' };
-    
-    try {
-      // If it's an Event object (like in WebSocket errors)
-      if (error instanceof Event) {
-        return {
-          type: error.type,
-          timeStamp: error.timeStamp,
-          target: error.target ? {
-            url: (error.target as any).url || 'unknown',
-            readyState: (error.target as any).readyState || 'unknown'
-          } : 'unknown'
-        };
-      }
       
-      // If it's a regular Error object
-      if (error instanceof Error) {
-        return {
-          name: error.name,
-          message: error.message,
-          stack: error.stack
-        };
-      }
+      const cacheKey = `price:${symbol}`;
+      this.cache.set(cacheKey, marketPrice);
       
-      // Unknown error type
-      return JSON.parse(JSON.stringify(error, Object.getOwnPropertyNames(error)));
-    } catch (e) {
-      // Last resort fallback
-      return { 
-        message: 'Error object could not be serialized',
-        errorType: typeof error,
-        errorToString: String(error)
-      };
+      this.emit('priceUpdate', { symbol, data: marketPrice });
+      console.log(`[MarketAdapter] WS Price update for ${symbol}:`, marketPrice.current);
+    } else if (jsonData.result === null && jsonData.id) {
+      console.log(`[MarketAdapter] Received WS acknowledgment for ID ${jsonData.id}:`, jsonData);
+    } else {
     }
   }
 
-  private handlePriceUpdate(data: any): void {
-    const symbol = data.symbol;
-    const cacheKey = `price:${symbol}`;
-    const currentData = this.cache.get(cacheKey);
-
-    const updatedData: MarketPrice = {
-      current: data.price,
-      historical: currentData?.historical || data.price,
-      change24h: data.percent_change_24h,
-      volume24h: data.volume_24h,
-      marketCap: data.market_cap,
-      lastUpdated: Date.now(),
-    };
-
-    this.cache.set(cacheKey, updatedData);
-    this.emit('priceUpdate', { symbol, data: updatedData });
-  }
-
-  private handleReconnect(): void {
-    if (this.reconnectAttempts >= this.MAX_RECONNECT_ATTEMPTS) {
-      const maxAttemptsError = new Error(`Max reconnection attempts (${this.MAX_RECONNECT_ATTEMPTS}) reached`);
-      console.error(maxAttemptsError);
-      this.emit('error', maxAttemptsError);
+  public subscribe(symbols: string[]): void {
+    if (!this.wsSendFunction) {
+      console.warn('[MarketAdapter] wsSendFunction not set. Cannot subscribe.');
       return;
     }
-
-    console.log(`Attempting to reconnect (${this.reconnectAttempts + 1}/${this.MAX_RECONNECT_ATTEMPTS})...`);
-    
-    setTimeout(() => {
-      this.reconnectAttempts++;
-      this.initializeWebSocket();
-    }, this.RECONNECT_INTERVAL);
+    const streams = symbols.map(s => `${formatSymbolForBinance(s).toLowerCase()}@ticker`);
+    const subMessage = {
+      method: "SUBSCRIBE",
+      params: streams,
+      id: this.currentWsId++
+    };
+    this.wsSendFunction(JSON.stringify(subMessage));
+    streams.forEach(s => this.subscribedSymbols.add(s));
+    console.log(`[MarketAdapter] Sent WS subscribe for: ${streams.join(', ')}`);
   }
 
-  public subscribe(symbol: string): void {
-    if (this.wsConnection?.readyState === WebSocket.OPEN) {
-      this.wsConnection.send(JSON.stringify({
-        action: 'subscribe',
-        symbol: symbol,
-      }));
+  public unsubscribe(symbols: string[]): void {
+    if (!this.wsSendFunction) {
+      console.warn('[MarketAdapter] wsSendFunction not set. Cannot unsubscribe.');
+      return;
     }
+    const streams = symbols.map(s => `${formatSymbolForBinance(s).toLowerCase()}@ticker`);
+    const unsubMessage = {
+      method: "UNSUBSCRIBE",
+      params: streams,
+      id: this.currentWsId++
+    };
+    this.wsSendFunction(JSON.stringify(unsubMessage));
+    streams.forEach(s => this.subscribedSymbols.delete(s));
+    console.log(`[MarketAdapter] Sent WS unsubscribe for: ${streams.join(', ')}`);
   }
 
-  public unsubscribe(symbol: string): void {
-    if (this.wsConnection?.readyState === WebSocket.OPEN) {
-      this.wsConnection.send(JSON.stringify({
-        action: 'unsubscribe',
-        symbol: symbol,
-      }));
+  public resubscribeToAll(): void {
+    if (this.subscribedSymbols.size > 0) {
+      if (!this.wsSendFunction) {
+        console.warn('[MarketAdapter] wsSendFunction not set. Cannot resubscribe.');
+        return;
+      }
+      const symbolsToResubscribe = Array.from(this.subscribedSymbols).map(streamName => {
+        return streamName.split('@')[0].toUpperCase().replace('USDT','');
+      });
+
+      if(symbolsToResubscribe.length > 0 ){
+         console.log('[MarketAdapter] Resubscribing to streams:', symbolsToResubscribe);
+         this.subscribe(symbolsToResubscribe);
+      } else {
+        console.log('[MarketAdapter] No symbols to resubscribe to.');
+      }
+    } else {
+      console.log('[MarketAdapter] No symbols to resubscribe to.');
     }
   }
 
   public disconnect(): void {
-    if (this.wsConnection && this.wsConnection.readyState === WebSocket.OPEN) {
-      try {
-        // Close with normal closure code
-        this.wsConnection.close(1000, 'Client disconnected');
-        this.wsConnection = null;
-        console.log('WebSocket disconnected manually');
-      } catch (error) {
-        console.error('Error closing WebSocket connection:', error);
-      }
+    console.log('[MarketAdapter] Disconnect called, clearing subscribed symbols.');
+    if (this.subscribedSymbols.size > 0 && this.wsSendFunction) {
+        const streamsToUnsub = Array.from(this.subscribedSymbols);
+        const symbolsToUnsub = streamsToUnsub.map(streamName => streamName.split('@')[0].toUpperCase().replace('USDT', ''));
+        if (symbolsToUnsub.length > 0) this.unsubscribe(symbolsToUnsub);
     }
+    this.subscribedSymbols.clear();
   }
 
-  public removeAllListeners(): void {
-    this.removeAllListeners('connected');
-    this.removeAllListeners('disconnected');
-    this.removeAllListeners('error');
-    this.removeAllListeners('priceUpdate');
-  }
-
-  public connect(): void {
-    console.log('Connecting to market data service...');
-    if (this.wsConnection && this.wsConnection.readyState === WebSocket.OPEN) {
-      console.log('WebSocket already connected');
-      return;
-    }
-
-    this.initializeWebSocket();
+  public removeAllListeners(event?: string | symbol | undefined): this {
+    return super.removeAllListeners(event);
   }
 }
 
-export const marketDataAdapter = MarketDataAdapter.getInstance(); 
+export default MarketDataAdapter.getInstance(); 

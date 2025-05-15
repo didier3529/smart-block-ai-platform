@@ -12,4 +12,24 @@ export const BINANCE_WS_URL = 'wss://stream.binance.com:9443/ws'
 
 // REST API endpoints
 export const CMC_API_BASE = 'https://pro-api.coinmarketcap.com/v1'
-export const BINANCE_API_BASE = 'https://api.binance.com/api/v3' 
+export const BINANCE_API_BASE = 'https://api.binance.com/api/v3'
+
+// Binance REST API endpoints
+export const BINANCE_API_BASE_URL = 'https://api.binance.com/api/v3';
+
+// Default trading pairs to monitor
+export const DEFAULT_TRADING_PAIRS = [
+  'BTCUSDT',
+  'ETHUSDT',
+  'BNBUSDT',
+  'SOLUSDT',
+  'ADAUSDT',
+  'DOGEUSDT'
+];
+
+// API request settings
+export const API_SETTINGS = {
+  pollInterval: 10000, // 10 seconds
+  timeout: 5000,      // 5 seconds
+  maxRetries: 3
+}; 

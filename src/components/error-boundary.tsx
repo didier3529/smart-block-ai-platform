@@ -1,6 +1,6 @@
 "use client"
 
-import React from 'react';
+import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { useStore } from '@/lib/store';
 import { ResetKeysConfig } from '@/types/common';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"

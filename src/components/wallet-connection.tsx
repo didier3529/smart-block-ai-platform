@@ -2,7 +2,6 @@
 
 import React, { useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { LoadingSpinner } from './ui/loading-spinner'
 import { connectWallet } from '@/lib/blockchain/walletConnection'
 
 export function WalletConnection() {
@@ -31,7 +30,9 @@ export function WalletConnection() {
       >
         {isConnecting ? (
           <span className="flex items-center gap-2">
-            <LoadingSpinner />
+            <div className="relative h-4 w-4">
+              <div className="absolute inset-0 animate-spin rounded-full border-2 border-transparent border-t-blue-500 border-r-purple-500" />
+            </div>
             Connecting...
           </span>
         ) : (

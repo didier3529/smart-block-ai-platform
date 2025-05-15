@@ -4,8 +4,6 @@ import React, { createContext, useContext, useState } from "react"
 import { apiClient } from "@/lib/api/config"
 
 interface Settings {
-  theme: "light" | "dark" | "system"
-  layout: "default" | "compact"
   security: {
     twoFactorEnabled: boolean
     loginAlerts: boolean
@@ -30,18 +28,16 @@ interface Settings {
 }
 
 interface SettingsContextType {
-  isLoading: boolean
   settings: Settings
-  updateSettings: (newSettings: Partial<Settings>) => Promise<void>
-  regenerateApiKey: () => Promise<void>
+  isLoading: boolean
   updateProfile: (profile: Partial<Settings['profile']>) => Promise<void>
   updateSecurity: (security: Partial<Settings['security']>) => Promise<void>
   updateBilling: (billing: Partial<Settings['billing']>) => Promise<void>
+  regenerateApiKey: () => Promise<void>
+  updateSettings: (settings: Partial<Settings>) => Promise<void>
 }
 
 const defaultSettings: Settings = {
-  theme: "dark",
-  layout: "default",
   security: {
     twoFactorEnabled: false,
     loginAlerts: true,

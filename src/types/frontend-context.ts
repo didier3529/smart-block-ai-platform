@@ -163,12 +163,7 @@ export const DEFAULT_DASHBOARD_CONFIG: DashboardConfig = {
   favoriteTokens: []
 };
 
-export const DEFAULT_THEME_CONFIG: ThemeConfig = {
-  mode: 'system',
-  accentColor: '#3b82f6',
-  fontSize: 'md',
-  reducedMotion: false
-};
+export const DEFAULT_THEME_CONFIG = {};  // Empty object since we're removing theme functionality
 
 // Breakpoints (in pixels)
 export const BREAKPOINTS = {

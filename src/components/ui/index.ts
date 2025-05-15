@@ -1,6 +1,5 @@
 // Navigation Components
 export * from './header';
-export * from './sidebar';
 export * from './drawer';
 export * from './breadcrumbs';
 export * from './tabs';
@@ -20,6 +19,7 @@ export * from './textarea';
 export * from './table';
 export * from './card';
 export * from './badge';
+export * from './tag';
 export * from './tooltip';
 export * from './progress';
 export * from './skeleton';

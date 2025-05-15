@@ -17,8 +17,13 @@ const inter = Inter({ subsets: ['latin'] });
 // }
 
 export const metadata: Metadata = {
-  title: 'ChainOracle',
+  title: 'Smart Block AI',
   description: 'AI-powered blockchain analytics platform',
+  icons: {
+    icon: { url: '/brain-icon-v2.svg?v=2', type: 'image/svg+xml' },
+    apple: '/brain-icon-v2.svg?v=2',
+  },
+  themeColor: '#000000',
 };
 
 export default function RootLayout({
@@ -29,7 +34,12 @@ export default function RootLayout({
   const isDevelopment = process.env.NODE_ENV === 'development'
 
   return (
-    <html lang="en" className="dark" suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        <link rel="icon" href="/brain-icon-v2.svg?v=2" type="image/svg+xml" />
+        <link rel="apple-touch-icon" href="/brain-icon-v2.svg?v=2" />
+        <meta name="theme-color" content="#000000" />
+      </head>
       <body className={inter.className}>
         <RootProvider>
           {children}

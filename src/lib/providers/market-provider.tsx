@@ -1,11 +1,11 @@
 "use client"
 
-import React, { createContext, useContext, useCallback, useMemo, useEffect, useRef } from "react"
+import React, { createContext, useContext, useCallback, useMemo, useEffect, useState } from "react"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
-import axios from "axios"
-import { toast } from "@/components/ui/use-toast"
-import { MarketData as ApiMarketData } from "@/types/blockchain"
-import { marketDataAdapter } from "@/lib/services/market-data-adapter"
+// import axios from "axios"
+// import { MarketData as ApiMarketData } from "@/types/blockchain"
+// import { marketDataAdapter } from "@/lib/services/market-data-adapter"
+import { usePriceContext, TokenPrice } from "./price-provider" // Import context from PriceProvider
 
 // Define proper types for market data
 interface MarketData {
@@ -24,13 +24,13 @@ interface MarketData {
 interface MarketContextType {
   marketData: MarketData | undefined
   isLoading: boolean
-  error: Error | null
-  refetch: () => void
-  isWebSocketConnected: boolean
+  error: Error | null // Error could come from calculation or underlying price fetch
+  refetch: () => void // Allow manual recalculation
+  isWebSocketConnected: boolean // Get from PriceProvider
 }
 
-// Market data cache key
-const MARKET_DATA_KEY = ["market-data"] as const
+// Market data cache key - recalculation key
+const AGGREGATE_MARKET_DATA_KEY = ["aggregate-market-data"] as const
 
 // Default fallback data
 const FALLBACK_MARKET_DATA: MarketData = {
@@ -54,98 +54,98 @@ const FALLBACK_MARKET_DATA: MarketData = {
 
 const MarketContext = createContext<MarketContextType | undefined>(undefined)
 
+// List of tokens needed for aggregate calculations
+const SUPPORTED_TOKENS_FOR_AGGREGATION = ["BTC", "ETH", "USDC", "SOL", "ADA", "DOT"]
+
 export function MarketProvider({ children }: { children: React.ReactNode }) {
-  const queryClient = useQueryClient()
-  const [isWebSocketConnected, setIsWebSocketConnected] = React.useState(false)
-  const supportedTokens = ["BTC", "ETH", "USDC", "SOL", "ADA", "DOT"]
+  // Consume the PriceProvider context to get underlying token prices
+  const {
+    prices: tokenPrices, 
+    isLoading: pricesLoading, 
+    error: pricesError, 
+    isWebSocketConnected, 
+    subscribeToPrices // Needed to ensure tokens are subscribed
+  } = usePriceContext()
 
-  // Memoized fetch function
-  const fetchMarketData = useCallback(async () => {
-    try {
-      console.log("Fetching market data from adapter")
-      
-      // Fetch data for all supported tokens
-      const tokenData = await Promise.all(
-        supportedTokens.map(symbol => marketDataAdapter.getPrice(symbol))
-      )
-
-      // Calculate total market cap and BTC dominance
-      const totalMarketCap = tokenData.reduce((sum, data) => sum + data.marketCap, 0)
-      const btcData = tokenData.find((_, index) => supportedTokens[index] === "BTC")
-      const btcDominance = btcData ? (btcData.marketCap / totalMarketCap) * 100 : 0
-
-      // Calculate total 24h volume
-      const totalVolume = tokenData.reduce((sum, data) => sum + data.volume24h, 0)
-
-      // Calculate volatility index based on price changes
-      const avgChange = tokenData.reduce((sum, data) => sum + Math.abs(data.change24h), 0) / tokenData.length
-      const volatilityIndex = avgChange / 50 // Normalize to 0-2 range
-
-      const marketData: MarketData = {
-        marketCap: totalMarketCap,
-        volume24h: totalVolume,
-        btcDominance,
-        volatilityIndex,
-        sentiment: getSentimentFromChanges(tokenData.map(d => d.change24h)),
-        keyLevels: FALLBACK_MARKET_DATA.keyLevels, // Keep static for now
-        lastUpdated: Date.now(),
-      }
-
-      return marketData
-    } catch (error) {
-      console.error("Market data fetch error:", error)
-      throw error
+  // Ensure the necessary tokens are subscribed via PriceProvider
+  useEffect(() => {
+    if (SUPPORTED_TOKENS_FOR_AGGREGATION.length > 0) {
+      const unsubscribe = subscribeToPrices(SUPPORTED_TOKENS_FOR_AGGREGATION);
+      return unsubscribe;
     }
-  }, [])
+  }, [subscribeToPrices]); // Re-run if subscribe function changes
 
-  // Query hook for market data
-  const { data: marketData, isLoading, error, refetch } = useQuery({
-    queryKey: MARKET_DATA_KEY,
-    queryFn: fetchMarketData,
-    refetchInterval: 30000, // Refetch every 30 seconds
-    retry: 3,
+  // Memoized calculation function
+  const calculateAggregateData = useCallback((): MarketData => {
+    console.log("[MarketProvider] Recalculating aggregate data...");
+    const relevantPrices = SUPPORTED_TOKENS_FOR_AGGREGATION
+      .map(symbol => tokenPrices[symbol])
+      .filter((price): price is TokenPrice => !!price); // Filter out undefined prices
+
+    if (relevantPrices.length === 0) {
+      console.warn("[MarketProvider] No price data available for aggregation.");
+      return FALLBACK_MARKET_DATA; // Return fallback if no prices are available
+    }
+
+    // Calculate total market cap and BTC dominance
+    const totalMarketCap = relevantPrices.reduce((sum, data) => sum + (data.marketCap || 0), 0) // Use 0 if marketCap is missing
+    const btcData = relevantPrices.find(price => price.symbol === "BTC")
+    const btcDominance = totalMarketCap > 0 && btcData && btcData.marketCap ? (btcData.marketCap / totalMarketCap) * 100 : 0
+
+    // Calculate total 24h volume
+    const totalVolume = relevantPrices.reduce((sum, data) => sum + (data.volume24h || 0), 0)
+
+    // Calculate volatility index based on price changes
+    const changes = relevantPrices.map(d => d.change24h).filter(c => typeof c === 'number');
+    const avgChange = changes.length > 0 ? changes.reduce((sum, data) => sum + Math.abs(data), 0) / changes.length : 0;
+    // Normalize volatility index (example normalization, adjust as needed)
+    const volatilityIndex = Math.min(Math.max(avgChange / 10, 0), 2); // Scale avg % change into 0-2 range
+
+    const aggregateData: MarketData = {
+      marketCap: totalMarketCap,
+      volume24h: totalVolume,
+      btcDominance,
+      volatilityIndex,
+      sentiment: getSentimentFromChanges(changes), // Pass numeric changes only
+      keyLevels: FALLBACK_MARKET_DATA.keyLevels, // Keep static for now
+      lastUpdated: Date.now(),
+    }
+
+    console.log("[MarketProvider] Aggregate Data Calculated:", aggregateData);
+    return aggregateData
+  }, [tokenPrices]) // Recalculate whenever the underlying tokenPrices object changes
+
+  // Use query hook primarily for caching the calculated result and providing a refetch mechanism.
+  // The calculation itself is driven by the input tokenPrices.
+  const { 
+    data: aggregateMarketData, 
+    isLoading: calculationIsLoading, // Reflects calculation time, not fetching
+    error: calculationError, 
+    refetch 
+  } = useQuery({
+    // Query key now depends on the actual prices to trigger recalculation
+    // Note: Stringifying a large prices object might be inefficient. 
+    // Consider a more stable key derived from timestamps or a simple counter if performance is an issue.
+    queryKey: [...AGGREGATE_MARKET_DATA_KEY, JSON.stringify(tokenPrices)],
+    queryFn: calculateAggregateData,
+    staleTime: 5000, // Recalculated data is fresh for a short time
+    cacheTime: 60000, // Cache the result for a minute
+    enabled: !pricesLoading, // Only calculate when underlying prices are not loading
   })
 
-  // WebSocket setup
-  useEffect(() => {
-    // Subscribe to all supported tokens
-    supportedTokens.forEach(symbol => marketDataAdapter.subscribe(symbol))
-
-    // Handle WebSocket events
-    const handleConnect = () => setIsWebSocketConnected(true)
-    const handleDisconnect = () => setIsWebSocketConnected(false)
-    const handlePriceUpdate = ({ symbol, data }: any) => {
-      queryClient.setQueryData(MARKET_DATA_KEY, (old: MarketData | undefined) => {
-        if (!old) return old
-        // Update market data based on new price
-        return {
-          ...old,
-          lastUpdated: Date.now(),
-        }
-      })
-    }
-
-    marketDataAdapter.on('connected', handleConnect)
-    marketDataAdapter.on('disconnected', handleDisconnect)
-    marketDataAdapter.on('priceUpdate', handlePriceUpdate)
-
-    return () => {
-      supportedTokens.forEach(symbol => marketDataAdapter.unsubscribe(symbol))
-      marketDataAdapter.removeListener('connected', handleConnect)
-      marketDataAdapter.removeListener('disconnected', handleDisconnect)
-      marketDataAdapter.removeListener('priceUpdate', handlePriceUpdate)
-    }
-  }, [queryClient])
+  // Removed the WebSocket setup useEffect as MarketProvider no longer manages its own connection
+  // useEffect(() => { ... marketDataAdapter interaction removed ... }, [queryClient])
 
   const value = useMemo(
     () => ({
-      marketData: marketData || FALLBACK_MARKET_DATA,
-      isLoading,
-      error,
-      refetch,
-      isWebSocketConnected
+      marketData: aggregateMarketData || FALLBACK_MARKET_DATA,
+      // Loading is true if underlying prices are loading OR calculation is running
+      isLoading: pricesLoading || calculationIsLoading, 
+      error: pricesError || calculationError, // Combine errors
+      refetch, // Expose refetch to manually trigger recalculation
+      isWebSocketConnected // Pass through from PriceProvider
     }),
-    [marketData, isLoading, error, refetch, isWebSocketConnected]
+    [aggregateMarketData, pricesLoading, calculationIsLoading, pricesError, calculationError, refetch, isWebSocketConnected]
   )
 
   return <MarketContext.Provider value={value}>{children}</MarketContext.Provider>

@@ -2,10 +2,21 @@
 
 import React, { createContext, useContext } from "react"
 import { useQuery } from "@tanstack/react-query"
+import { getNftCollections, getNftMarketplaceStats } from "@/lib/services/nft-service"
+import { NFTCollection } from "@/lib/types/nft-types"
 
 interface NFTContextType {
   isLoading: boolean
-  nftData: any // Replace with proper type
+  nftData: {
+    collections: NFTCollection[];
+    stats?: {
+      totalVolume24h?: string;
+      totalSales24h?: number;
+      activeCollections?: number;
+      uniqueTraders24h?: number;
+      averageNftPrice24h?: string;
+    }
+  }
   error: Error | null
   refetch: () => void
 }
@@ -13,55 +24,73 @@ interface NFTContextType {
 const NFTContext = createContext<NFTContextType | undefined>(undefined)
 
 export function NFTProvider({ children }: { children: React.ReactNode }) {
+  // Fetch collections
   const {
-    data: nftData,
-    isLoading,
-    error,
-    refetch,
+    data: collectionsData,
+    isLoading: isLoadingCollections,
+    error: collectionsError,
+    refetch: refetchCollections,
   } = useQuery({
-    queryKey: ["nft"],
+    queryKey: ["nft", "collections"],
     queryFn: async () => {
       try {
-        // Safely implement NFT data fetching with proper error handling
-        // For now, return mock data instead of empty object
-        return {
-          collections: [
-            {
-              name: "Bored Ape Yacht Club",
-              symbol: "BAYC",
-              floorPrice: 30.5,
-              volume24h: 128.3,
-              items: 10000,
-              owners: 6452
-            },
-            {
-              name: "CryptoPunks",
-              symbol: "PUNK",
-              floorPrice: 48.2,
-              volume24h: 95.7,
-              items: 10000,
-              owners: 3725
-            }
-          ]
-        }
+        // Use our Alchemy-based service to fetch real collection data
+        const response = await getNftCollections();
+        console.log("[NFTProvider] Fetched collections:", response);
+        return response;
       } catch (err) {
-        console.error("Failed to fetch NFT data:", err);
-        // Return fallback data instead of throwing error
-        return { collections: [] };
+        console.error("Failed to fetch NFT collections:", err);
+        throw err;
       }
     },
-    // Don't fail on error, handle gracefully
     retry: 2,
     retryDelay: 1000,
-  })
+  });
+
+  // Fetch market stats
+  const {
+    data: statsData,
+    isLoading: isLoadingStats,
+    error: statsError,
+  } = useQuery({
+    queryKey: ["nft", "stats"],
+    queryFn: async () => {
+      try {
+        // Use our Alchemy-based service to fetch market stats
+        const response = await getNftMarketplaceStats();
+        console.log("[NFTProvider] Fetched stats:", response);
+        return response;
+      } catch (err) {
+        console.error("Failed to fetch NFT stats:", err);
+        throw err;
+      }
+    },
+    retry: 2,
+    retryDelay: 1000,
+  });
+
+  const isLoading = isLoadingCollections || isLoadingStats;
+  const error = collectionsError || statsError;
+
+  // Combine the data
+  const nftData = {
+    collections: collectionsData?.collections || [],
+    stats: statsData ? {
+      totalVolume24h: statsData.totalVolume24h,
+      totalSales24h: statsData.totalSales24h,
+      activeCollections: statsData.activeCollections,
+      uniqueTraders24h: statsData.uniqueTraders24h,
+      averageNftPrice24h: statsData.averageNftPrice24h,
+    } : undefined
+  };
 
   return (
     <NFTContext.Provider
       value={{
         isLoading,
-        nftData: nftData || { collections: [] },
+        nftData,
         error: error as Error | null,
-        refetch,
+        refetch: refetchCollections,
       }}
     >
       {children}

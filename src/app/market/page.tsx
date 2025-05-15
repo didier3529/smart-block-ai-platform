@@ -1,14 +1,11 @@
-"use client"
-
-import * as React from "react"
+import { redirect } from 'next/navigation'
 
 export default function MarketPage() {
-  return (
-    <div className="p-6">
-      <h1 className="text-2xl font-bold mb-4">Market Analysis</h1>
-      <p>Loading market data...</p>
-    </div>
-  )
+  // Redirect to the dashboard Market page
+  redirect('/dashboard/market')
+  
+  // This is necessary to satisfy TypeScript but will never be executed
+  return null
 }
 
 // PPR PLAN: The market page is a candidate for Partial Pre-Rendering (PPR).

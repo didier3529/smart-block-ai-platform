@@ -1,7 +1,6 @@
 import { useAuth } from '@/lib/providers/auth-provider';
 import { useStore } from '@/lib/store';
 import { NetworkType } from '@/types/blockchain';
-import { useTheme } from 'next-themes';
 import { Button } from '../ui/button';
 import {
   DropdownMenu,
@@ -21,7 +20,6 @@ const networks: { id: NetworkType; name: string; icon: keyof typeof Icons }[] = 
 
 export function Navbar() {
   const { user, disconnectWallet } = useAuth();
-  const { theme, setTheme } = useTheme();
   const { selectedNetwork, setSelectedNetwork } = useStore();
 
   const selectedNetworkData = networks.find((n) => n.id === selectedNetwork);
@@ -56,16 +54,6 @@ export function Navbar() {
         </div>
 
         <div className="flex items-center gap-4">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-          >
-            <Icons.sun className="h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-            <Icons.moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-            <span className="sr-only">Toggle theme</span>
-          </Button>
-
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="gap-2">

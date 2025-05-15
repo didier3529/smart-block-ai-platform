@@ -7,8 +7,6 @@
  */
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
-import { ThemeProvider } from "next-themes"
-import { WebSocketProvider } from "./websocket-provider"
 import { PortfolioProvider } from "@/lib/providers/portfolio-provider"
 import { MarketProvider } from "./market-provider"
 import { NFTProvider } from "./nft-provider"
@@ -40,26 +38,22 @@ export function RootProvider({ children }: { children: React.ReactNode }) {
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
-        <ThemeProvider attribute="class" defaultTheme="dark">
-          <AuthProvider>
-            <WebSocketProvider>
-              <SettingsProvider>
-                <PriceProvider>
-                  <PortfolioProvider>
-                    <MarketProvider>
-                      <NFTProvider>
-                        <ContractProvider>
-                          {children}
-                          <Toaster />
-                        </ContractProvider>
-                      </NFTProvider>
-                    </MarketProvider>
-                  </PortfolioProvider>
-                </PriceProvider>
-              </SettingsProvider>
-            </WebSocketProvider>
-          </AuthProvider>
-        </ThemeProvider>
+        <AuthProvider>
+          <SettingsProvider>
+            <PriceProvider>
+              <PortfolioProvider>
+                <MarketProvider>
+                  <NFTProvider>
+                    <ContractProvider>
+                      {children}
+                      <Toaster />
+                    </ContractProvider>
+                  </NFTProvider>
+                </MarketProvider>
+              </PortfolioProvider>
+            </PriceProvider>
+          </SettingsProvider>
+        </AuthProvider>
         {process.env.NODE_ENV === 'development' && <ReactQueryDevtools initialIsOpen={false} position="bottom-right" />}
       </QueryClientProvider>
     </ErrorBoundary>

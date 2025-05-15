@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useMemo, useState } from "react"
-import { usePortfolio } from "@/hooks/use-portfolio"
+import { usePortfolio } from "@/lib/providers/portfolio-provider"
 import { Card } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Input } from "@/components/ui/input"

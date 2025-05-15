@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/providers/auth-provider';
-import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import { LoadingScreen } from '@/components/ui/loading-screen';
 import { DashboardProvider } from './dashboard-context';
 
 interface DashboardProtectionProps {
@@ -44,14 +44,7 @@ export function DashboardProtection({ children }: DashboardProtectionProps) {
 
   // Handle loading state
   if (isLoading || (isInitializing && !error)) {
-    return (
-      <div className="flex h-screen w-full items-center justify-center bg-background">
-        <div className="text-center">
-          <LoadingSpinner className="mx-auto h-12 w-12" />
-          <p className="mt-4 text-muted-foreground">Loading your dashboard...</p>
-        </div>
-      </div>
-    );
+    return <LoadingScreen />;
   }
 
   // Handle error state

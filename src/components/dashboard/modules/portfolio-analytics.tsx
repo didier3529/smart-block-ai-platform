@@ -1,7 +1,7 @@
 "use client"
 
 import { useMemo } from "react"
-import { usePortfolio } from "@/hooks/use-portfolio"
+import { usePortfolio } from "@/lib/providers/portfolio-provider"
 import { formatCurrency, formatPercentage } from "@/lib/utils"
 import { Activity, BarChart2, PieChart, Zap } from "lucide-react"
 import { useTokenPrices } from "@/lib/providers/price-provider"
@@ -95,58 +95,58 @@ export function PortfolioAnalytics({ isLoading: parentLoading = false, className
 
   return (
     <div className={`grid gap-4 md:grid-cols-2 lg:grid-cols-4 ${className}`}>
-      <div className="rounded-xl border border-white/10 bg-black/30 p-6 backdrop-blur-md">
+      <div className="rounded-xl border border-border bg-card p-6 backdrop-blur-md">
         <div className="flex items-center justify-between">
-          <h3 className="text-sm font-medium text-gray-400">Total Value</h3>
-          <BarChart2 className="h-4 w-4 text-gray-400" />
+          <h3 className="text-sm font-medium text-muted-foreground">Total Value</h3>
+          <BarChart2 className="h-4 w-4 text-muted-foreground" />
         </div>
         <div className="mt-4">
-          <div className="text-2xl font-bold text-white">
+          <div className="text-2xl font-bold text-foreground">
             {formatCurrency(analytics.totalValue)}
           </div>
         </div>
       </div>
 
-      <div className="rounded-xl border border-white/10 bg-black/30 p-6 backdrop-blur-md">
+      <div className="rounded-xl border border-border bg-card p-6 backdrop-blur-md">
         <div className="flex items-center justify-between">
-          <h3 className="text-sm font-medium text-gray-400">Profit/Loss</h3>
-          <PieChart className="h-4 w-4 text-gray-400" />
+          <h3 className="text-sm font-medium text-muted-foreground">Profit/Loss</h3>
+          <PieChart className="h-4 w-4 text-muted-foreground" />
         </div>
         <div className="mt-4">
-          <div className="text-2xl font-bold text-white">
+          <div className="text-2xl font-bold text-foreground">
             {formatCurrency(analytics.profitLoss.total)}
           </div>
-          <div className="mt-1 text-sm text-gray-400">
+          <div className="mt-1 text-sm text-muted-foreground">
             Realized: {formatCurrency(analytics.profitLoss.realized)}
           </div>
         </div>
       </div>
 
-      <div className="rounded-xl border border-white/10 bg-black/30 p-6 backdrop-blur-md">
+      <div className="rounded-xl border border-border bg-card p-6 backdrop-blur-md">
         <div className="flex items-center justify-between">
-          <h3 className="text-sm font-medium text-gray-400">Performance</h3>
-          <Activity className="h-4 w-4 text-gray-400" />
+          <h3 className="text-sm font-medium text-muted-foreground">Performance</h3>
+          <Activity className="h-4 w-4 text-muted-foreground" />
         </div>
         <div className="mt-4">
-          <div className="text-2xl font-bold text-white">
+          <div className="text-2xl font-bold text-foreground">
             {formatPercentage(analytics.performance.monthly)}
           </div>
-          <div className="mt-1 text-sm text-gray-400">
+          <div className="mt-1 text-sm text-muted-foreground">
             YTD: {formatPercentage(analytics.performance.yearly)}
           </div>
         </div>
       </div>
 
-      <div className="rounded-xl border border-white/10 bg-black/30 p-6 backdrop-blur-md">
+      <div className="rounded-xl border border-border bg-card p-6 backdrop-blur-md">
         <div className="flex items-center justify-between">
-          <h3 className="text-sm font-medium text-gray-400">Risk Metrics</h3>
-          <Zap className="h-4 w-4 text-gray-400" />
+          <h3 className="text-sm font-medium text-muted-foreground">Risk Metrics</h3>
+          <Zap className="h-4 w-4 text-muted-foreground" />
         </div>
         <div className="mt-4">
-          <div className="text-2xl font-bold text-white">
+          <div className="text-2xl font-bold text-foreground">
             {formatPercentage(analytics.riskMetrics.volatility)}
           </div>
-          <div className="mt-1 text-sm text-gray-400">
+          <div className="mt-1 text-sm text-muted-foreground">
             Sharpe: {analytics.riskMetrics.sharpeRatio.toFixed(2)}
           </div>
         </div>

@@ -11,13 +11,11 @@ import {
   Gem,
   Settings,
   LogOut,
-  ChevronRight,
-  ChevronLeft,
   HelpCircle,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Logo } from "@/components/ui/logo"
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { TooltipProvider } from "@/components/ui/tooltip"
 import { useAuth } from "@/lib/providers/auth-provider"
 
 interface SidebarItemProps {
@@ -87,43 +85,15 @@ function SidebarItem({ icon, label, href, description, isActive }: SidebarItemPr
   )
 }
 
-function CollapsedSidebarItem({ icon, label, href, description, isActive }: SidebarItemProps) {
-  return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <Link
-          href={href}
-          className={cn(
-            "flex h-10 w-10 items-center justify-center rounded-lg transition-all duration-200",
-            isActive
-              ? "bg-gradient-to-r from-purple-600/20 to-blue-600/20 text-white"
-              : "text-gray-400 hover:bg-gray-800 hover:text-white",
-          )}
-        >
-          <div className="h-5 w-5">{icon}</div>
-        </Link>
-      </TooltipTrigger>
-      <TooltipContent side="right" className="flex flex-col">
-        <span className="font-medium">{label}</span>
-        {description && <span className="text-xs text-gray-400">{description}</span>}
-      </TooltipContent>
-    </Tooltip>
-  )
-}
-
 export function UnifiedSidebar() {
   const pathname = usePathname()
   const { logout } = useAuth()
-  const [isCollapsed, setIsCollapsed] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
 
   useEffect(() => {
     const checkMobile = () => {
       const isMobileView = window.innerWidth < 768
       setIsMobile(isMobileView)
-      if (isMobileView) {
-        setIsCollapsed(false)
-      }
     }
 
     checkMobile()
@@ -142,37 +112,13 @@ export function UnifiedSidebar() {
   return (
     <TooltipProvider delayDuration={300}>
       <aside
-        className={cn(
-          "fixed inset-y-0 left-0 z-50 flex flex-col border-r border-white/10 bg-black/80 backdrop-blur-sm transition-all duration-300",
-          isCollapsed ? "w-16" : "w-64",
-        )}
+        className="fixed inset-y-0 left-0 z-50 flex flex-col border-r border-white/10 bg-black/80 backdrop-blur-sm w-64"
       >
         {/* Header */}
-        <div className="flex h-16 items-center justify-between border-b border-white/10 px-4">
+        <div className="flex h-20 items-center border-b border-white/10 px-4">
           <Link href="/dashboard" className="flex items-center overflow-hidden">
-            {isCollapsed ? (
-              <div className="h-8 w-8 rounded-full bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center text-white font-bold">
-                SB
-              </div>
-            ) : (
-              <>
-                <div className="h-8 w-8 rounded-full bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center text-white font-bold">
-                  SB
-                </div>
-                <span className="ml-2 text-xl font-bold gradient-text-phantom">SmartBlockAI</span>
-              </>
-            )}
+            <Logo size="medium" variant="bordered" singleLine={true} />
           </Link>
-
-          {!isMobile && (
-            <button
-              onClick={() => setIsCollapsed(!isCollapsed)}
-              className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-white transition-colors"
-              aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-            >
-              {isCollapsed ? <ChevronRight className="h-5 w-5" /> : <ChevronLeft className="h-5 w-5" />}
-            </button>
-          )}
         </div>
 
         {/* Navigation */}
@@ -180,10 +126,9 @@ export function UnifiedSidebar() {
           <ul className="space-y-2">
             {sidebarLinks.map((link) => {
               const isActive = pathname === link.href || (link.href !== "/dashboard" && pathname.startsWith(link.href))
-              const ItemComponent = isCollapsed ? CollapsedSidebarItem : SidebarItem
               return (
                 <li key={link.href}>
-                  <ItemComponent
+                  <SidebarItem
                     icon={<link.icon size={18} />}
                     label={link.label}
                     href={link.href}
@@ -198,29 +143,13 @@ export function UnifiedSidebar() {
 
         {/* Footer */}
         <div className="border-t border-white/10 p-3">
-          {isCollapsed ? (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button
-                  onClick={handleLogout}
-                  className="flex h-10 w-10 items-center justify-center rounded-lg text-gray-400 hover:bg-gray-800 hover:text-white transition-colors"
-                >
-                  <LogOut className="h-5 w-5" />
-                </button>
-              </TooltipTrigger>
-              <TooltipContent side="right">
-                <span>Disconnect</span>
-              </TooltipContent>
-            </Tooltip>
-          ) : (
-            <button
-              onClick={handleLogout}
-              className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors"
-            >
-              <LogOut className="h-5 w-5" />
-              <span>Disconnect</span>
-            </button>
-          )}
+          <button
+            onClick={handleLogout}
+            className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors"
+          >
+            <LogOut className="h-5 w-5" />
+            <span>Disconnect</span>
+          </button>
         </div>
       </aside>
     </TooltipProvider>

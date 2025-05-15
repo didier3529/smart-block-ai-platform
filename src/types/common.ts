@@ -135,6 +135,8 @@ export interface Asset {
   balance: string;
   value: number;
   valueChange24h: number;
+  allocation?: number;
+  network?: string;
 }
 
 export interface MetricsData {

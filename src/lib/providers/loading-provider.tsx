@@ -1,11 +1,12 @@
 "use client"
 
 import React from 'react'
-import { useAuthGuard } from '@/hooks/useAuthGuard'
-import { usePortfolio } from "@/lib/providers/portfolio-provider"
-import { useMarket } from "@/lib/providers/market-provider"
-import { useContract } from "@/lib/providers/contract-provider"
-import { useNFT } from "@/lib/providers/nft-provider"
+import { useAuthGuard } from '@/lib/hooks/use-auth-guard'
+import { usePortfolio } from '@/lib/hooks/use-portfolio'
+import { useMarket } from '@/lib/hooks/use-market'
+import { useContractContext } from '@/lib/providers/contract-provider'
+import { useNFT } from '@/lib/hooks/use-nft'
+import { LoadingScreen } from '@/components/ui/loading-screen'
 
 interface LoadingContextType {
   isLoading: boolean
@@ -21,7 +22,7 @@ export function LoadingProvider({ children }: { children: React.ReactNode }) {
   const { isLoading: authLoading, canAccess } = useAuthGuard()
   const { isLoading: portfolioLoading } = usePortfolio()
   const { isLoading: marketLoading } = useMarket()
-  const { isLoading: contractLoading } = useContract()
+  const { isLoading: contractLoading } = useContractContext()
   const { isLoading: nftLoading } = useNFT()
 
   const isLoading = authLoading || portfolioLoading || marketLoading || contractLoading || nftLoading
@@ -33,14 +34,7 @@ export function LoadingProvider({ children }: { children: React.ReactNode }) {
     nftLoading ? 'Loading NFT data...' : ''
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-[50vh]">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-primary"></div>
-          <p className="mt-4 text-sm text-muted-foreground">{loadingMessage}</p>
-        </div>
-      </div>
-    )
+    return <LoadingScreen />
   }
 
   if (!canAccess) {

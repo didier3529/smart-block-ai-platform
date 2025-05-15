@@ -47,9 +47,9 @@ export function MobileNavbar() {
 
   return (
     <div className="border-b border-white/10 bg-black/90">
-      <div className="flex h-16 items-center justify-between px-4">
+      <div className="flex h-20 items-center justify-between px-4">
         <Link href="/dashboard" className="flex items-center">
-          <Logo size="small" />
+          <Logo size="small" variant="bordered" singleLine={true} />
         </Link>
         <button
           onClick={() => setIsOpen(!isOpen)}

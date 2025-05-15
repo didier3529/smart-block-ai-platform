@@ -1,5 +1,5 @@
 import { ComponentType } from 'react';
-import { useAuthGuard } from '@/hooks/useAuthGuard';
+import { useAuthGuard } from '@/hooks/use-auth-guard';
 
 interface WithAuthGuardOptions {
   redirectTo?: string;

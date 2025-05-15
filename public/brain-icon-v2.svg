@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
+  <!-- Black background -->
+  <rect width="32" height="32" rx="6" fill="#000000"/>
+  
+  <!-- Define gradient -->
+  <defs>
+    <linearGradient id="brainGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#9333EA;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#4F46E5;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Brain design with gradient and rotated 90 degrees -->
+  <g fill="none" stroke="url(#brainGradient)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" transform="rotate(90, 16, 16)">
+    <!-- Left hemisphere -->
+    <path d="M11 10C9 13 13 14 13 16C13 18 9 19 11 22" />
+    <!-- Right hemisphere - mirror of left -->
+    <path d="M21 10C23 13 19 14 19 16C19 18 23 19 21 22" />
+    <!-- Bottom curve - symmetric -->
+    <path d="M11 22C12 25 16 26 16 26C16 26 20 25 21 22" />
+    <!-- Circuit lines - both sides for symmetry -->
+    <path d="M21 13H24M24 13V10" />
+    <path d="M8 13H11M8 13V10" />
+    <!-- Additional circuit lines -->
+    <path d="M21 19H24M24 19V16" />
+    <path d="M8 19H11M8 19V16" />
+  </g>
+</svg> 

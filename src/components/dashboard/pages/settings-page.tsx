@@ -5,26 +5,18 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
 import { useSettingsContext } from "@/lib/providers/settings-provider"
-import { useTheme } from "next-themes"
 import {
-  Bell,
   User,
-  Sun,
   Lock,
   Key,
   CreditCard,
-  Save,
-  Moon,
-  Globe,
-  ChevronDown
 } from "lucide-react"
 import { Switch } from "@/components/ui/switch"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 export function SettingsPage() {
-  const { settings, isLoading, updateProfile, updateSecurity, updateNotifications, updateBilling, regenerateApiKey } = useSettingsContext()
-  const { theme, setTheme } = useTheme()
-  const [activeTab, setActiveTab] = useState<"profile" | "appearance" | "notifications" | "security" | "api-keys" | "billing">("profile")
+  const { settings, isLoading, updateProfile, updateSecurity, updateNotifications, updateBilling, regenerateApiKey, updateSettings } = useSettingsContext()
+  const [activeTab, setActiveTab] = useState<"profile" | "security" | "api-keys" | "billing">("profile")
 
   const renderContent = () => {
     switch (activeTab) {
@@ -67,163 +59,6 @@ export function SettingsPage() {
                   disabled
                   className="bg-[#1a1a1f] border-white/10 text-white opacity-70 w-full"
                 />
-              </div>
-            </div>
-          </div>
-        )
-
-      case "appearance":
-        return (
-          <div className="space-y-6">
-            <div>
-              <h3 className="text-lg font-medium mb-4">Theme</h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <button
-                  onClick={() => setTheme("light")}
-                  className={cn(
-                    "flex flex-col items-center justify-center rounded-lg border p-4 transition-all",
-                    theme === "light" ? "border-primary bg-primary/10" : "border-white/10 hover:bg-white/5"
-                  )}
-                >
-                  <Sun className="mb-2 h-6 w-6" />
-                  <span className="text-sm font-medium">Light</span>
-                </button>
-
-                <button
-                  onClick={() => setTheme("dark")}
-                  className={cn(
-                    "flex flex-col items-center justify-center rounded-lg border p-4 transition-all",
-                    theme === "dark" ? "border-primary bg-primary/10" : "border-white/10 hover:bg-white/5"
-                  )}
-                >
-                  <Moon className="mb-2 h-6 w-6" />
-                  <span className="text-sm font-medium">Dark</span>
-                </button>
-
-                <button
-                  onClick={() => setTheme("system")}
-                  className={cn(
-                    "flex flex-col items-center justify-center rounded-lg border p-4 transition-all",
-                    theme === "system" ? "border-primary bg-primary/10" : "border-white/10 hover:bg-white/5"
-                  )}
-                >
-                  <Globe className="mb-2 h-6 w-6" />
-                  <span className="text-sm font-medium">System</span>
-                </button>
-              </div>
-            </div>
-
-            <div>
-              <h3 className="text-lg font-medium mb-4">Layout</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <button 
-                  className={cn(
-                    "flex flex-col items-center justify-center rounded-lg border p-4 transition-all",
-                    settings.layout === "default" ? "border-primary bg-primary/10" : "border-white/10 hover:bg-white/5"
-                  )}
-                  onClick={() => updateSettings({ layout: "default" })}
-                >
-                  <div className="mb-2 h-20 w-full rounded bg-gradient-to-r from-primary/20 to-secondary/20"></div>
-                  <span className="text-sm font-medium">Default</span>
-                </button>
-
-                <button 
-                  className={cn(
-                    "flex flex-col items-center justify-center rounded-lg border p-4 transition-all",
-                    settings.layout === "compact" ? "border-primary bg-primary/10" : "border-white/10 hover:bg-white/5"
-                  )}
-                  onClick={() => updateSettings({ layout: "compact" })}
-                >
-                  <div className="mb-2 h-20 w-full rounded bg-gradient-to-r from-primary/20 to-secondary/20"></div>
-                  <span className="text-sm font-medium">Compact</span>
-                </button>
-              </div>
-            </div>
-          </div>
-        )
-
-      case "notifications":
-        return (
-          <div className="space-y-6">
-            <div>
-              <h3 className="text-lg font-medium mb-4">Notification Preferences</h3>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h4 className="text-sm font-medium">Email Notifications</h4>
-                    <p className="text-xs text-gray-400">Receive important notifications via email</p>
-                  </div>
-                  <Switch 
-                    checked={settings.notifications.email}
-                    onCheckedChange={(checked) => updateNotifications({ email: checked })}
-                  />
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h4 className="text-sm font-medium">Push Notifications</h4>
-                    <p className="text-xs text-gray-400">Get notifications on your device</p>
-                  </div>
-                  <Switch 
-                    checked={settings.notifications.push}
-                    onCheckedChange={(checked) => updateNotifications({ push: checked })}
-                  />
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h4 className="text-sm font-medium">Desktop Notifications</h4>
-                    <p className="text-xs text-gray-400">Show notifications on your desktop</p>
-                  </div>
-                  <Switch 
-                    checked={settings.notifications.desktop}
-                    onCheckedChange={(checked) => updateNotifications({ desktop: checked })}
-                  />
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h4 className="text-sm font-medium">Price Alerts</h4>
-                    <p className="text-xs text-gray-400">Get notified about price changes</p>
-                  </div>
-                  <Switch 
-                    checked={settings.notifications.priceAlerts}
-                    onCheckedChange={(checked) => updateNotifications({ priceAlerts: checked })}
-                  />
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h4 className="text-sm font-medium">Security Alerts</h4>
-                    <p className="text-xs text-gray-400">Get notified about security events</p>
-                  </div>
-                  <Switch 
-                    checked={settings.notifications.securityAlerts}
-                    onCheckedChange={(checked) => updateNotifications({ securityAlerts: checked })}
-                  />
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h4 className="text-sm font-medium">Market Updates</h4>
-                    <p className="text-xs text-gray-400">Receive market analysis and updates</p>
-                  </div>
-                  <Switch 
-                    checked={settings.notifications.marketUpdates}
-                    onCheckedChange={(checked) => updateNotifications({ marketUpdates: checked })}
-                  />
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h4 className="text-sm font-medium">New Features</h4>
-                    <p className="text-xs text-gray-400">Learn about new features and updates</p>
-                  </div>
-                  <Switch 
-                    checked={settings.notifications.newFeatures}
-                    onCheckedChange={(checked) => updateNotifications({ newFeatures: checked })}
-                  />
-                </div>
               </div>
             </div>
           </div>
@@ -399,30 +234,6 @@ export function SettingsPage() {
           >
             <User className="mr-2 h-4 w-4" />
             Profile
-          </button>
-          <button
-            onClick={() => setActiveTab("appearance")}
-            className={cn(
-              "flex w-full items-center rounded-lg px-3 py-2 text-sm font-medium",
-              activeTab === "appearance"
-                ? "bg-[#312e81] text-white"
-                : "text-gray-400 hover:bg-gray-800 hover:text-white"
-            )}
-          >
-            <Sun className="mr-2 h-4 w-4" />
-            Appearance
-          </button>
-          <button
-            onClick={() => setActiveTab("notifications")}
-            className={cn(
-              "flex w-full items-center rounded-lg px-3 py-2 text-sm font-medium",
-              activeTab === "notifications"
-                ? "bg-[#312e81] text-white"
-                : "text-gray-400 hover:bg-gray-800 hover:text-white"
-            )}
-          >
-            <Bell className="mr-2 h-4 w-4" />
-            Notifications
           </button>
           <button
             onClick={() => setActiveTab("security")}

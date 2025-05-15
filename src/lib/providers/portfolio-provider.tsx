@@ -1,9 +1,9 @@
 "use client"
 
-import React, { createContext, useContext, useMemo, useCallback } from "react"
+import React, { createContext, useContext, useMemo, useCallback, useEffect } from "react"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
-import { useWebSocket } from "@/hooks/use-websocket"
 import type { PortfolioSummary, PortfolioToken } from "@/types/blockchain"
+import { PriceFetcherConfig } from "@/config/price-fetcher-config"
 
 // Enhanced type definitions
 interface PortfolioContextValue {
@@ -17,6 +17,7 @@ interface PortfolioContextValue {
 const PortfolioContext = createContext<PortfolioContextValue | undefined>(undefined)
 
 const PORTFOLIO_QUERY_KEY = ["portfolio"] as const
+const POLLING_INTERVAL = PriceFetcherConfig.pollingInterval // Use the same polling interval as price fetcher
 
 async function fetchPortfolioData(): Promise<PortfolioSummary> {
   const response = await fetch("/api/portfolio/summary")
@@ -28,7 +29,6 @@ async function fetchPortfolioData(): Promise<PortfolioSummary> {
 
 export function PortfolioProvider({ children }: { children: React.ReactNode }) {
   const queryClient = useQueryClient()
-  const { subscribe, unsubscribe } = useWebSocket()
 
   const {
     data: portfolioData,
@@ -38,10 +38,11 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
   } = useQuery({
     queryKey: PORTFOLIO_QUERY_KEY,
     queryFn: fetchPortfolioData,
-    staleTime: 1000 * 30, // Consider data fresh for 30 seconds
-    cacheTime: 1000 * 60 * 5, // Keep in cache for 5 minutes
-    retry: 2,
-    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+    staleTime: POLLING_INTERVAL, // Consider data fresh for one polling interval
+    cacheTime: POLLING_INTERVAL * 5, // Keep in cache for 5 polling intervals
+    retry: PriceFetcherConfig.maxRetries,
+    retryDelay: (attemptIndex) => Math.min(PriceFetcherConfig.retryInterval * 2 ** attemptIndex, 30000),
+    refetchInterval: POLLING_INTERVAL, // Poll at the same interval as price fetcher
   })
 
   // Memoized update function
@@ -52,18 +53,18 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
     })
   }, [queryClient])
 
-  // WebSocket subscription for real-time updates
-  React.useEffect(() => {
-    const channel = "portfolio:updates"
-    
-    subscribe(channel, (update: Partial<PortfolioSummary>) => {
-      updatePortfolioData(update)
-    })
-
-    return () => {
-      unsubscribe(channel)
+  // Log status changes in development
+  useEffect(() => {
+    if (PriceFetcherConfig.verbose) {
+      if (isLoading) {
+        console.log('[PortfolioProvider] Loading portfolio data...');
+      } else if (error) {
+        console.error('[PortfolioProvider] Error loading portfolio data:', error);
+      } else if (portfolioData) {
+        console.log('[PortfolioProvider] Portfolio data updated:', portfolioData);
+      }
     }
-  }, [subscribe, unsubscribe, updatePortfolioData])
+  }, [isLoading, error, portfolioData]);
 
   // Memoize context value to prevent unnecessary re-renders
   const contextValue = useMemo(
@@ -108,12 +109,17 @@ export function usePortfolioTokens(network?: string) {
       }
       return response.json()
     },
+    staleTime: POLLING_INTERVAL,
+    cacheTime: POLLING_INTERVAL * 5,
+    retry: PriceFetcherConfig.maxRetries,
+    retryDelay: (attemptIndex) => Math.min(PriceFetcherConfig.retryInterval * 2 ** attemptIndex, 30000),
+    refetchInterval: POLLING_INTERVAL,
   })
 }
 
 // Composite hook for portfolio overview usage
 export function usePortfolio(options: { timeframe?: string; network?: string } = {}) {
-  const { timeframe = "1w", network = "ethereum" } = options
+  const { timeframe = "1d", network = "ethereum" } = options
   const summary = usePortfolioSummary()
   const tokens = usePortfolioTokens(network)
   
