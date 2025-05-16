@@ -1,8 +1,8 @@
 import { AI_CONFIG } from '@/config/ai-config';
 
-export interface AIAnalysisRequest {
+export interface AIAnalysisRequest<T = Record<string, unknown>> {
   type: 'portfolio' | 'market' | 'contract' | 'nft';
-  data: any;
+  data: T;
 }
 
 export interface AIAnalysisResponse {
@@ -50,7 +50,7 @@ export class AIService {
     return this.isMockEnabled || (!this.openaiConfig.apiKey && process.env.NODE_ENV === 'development');
   }
 
-  async analyzeData(request: AIAnalysisRequest): Promise<AIAnalysisResponse> {
+  async analyzeData<T = Record<string, unknown>>(request: AIAnalysisRequest<T>): Promise<AIAnalysisResponse> {
     // Check for undefined or malformed request data
     if (!request || !request.type || !request.data) {
       console.error('Invalid AI analysis request');
@@ -130,19 +130,20 @@ export class AIService {
         confidence: 0.85,
         isError: false
       };
-    } catch (error: any) {
-      console.error('AI analysis error:', error);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      console.error('AI analysis error:', errorMessage);
       return {
         analysis: 'Error processing request',
         recommendations: ['Please try again later'],
         confidence: 0,
         isError: true,
-        errorMessage: error.message
+        errorMessage
       };
     }
   }
 
-  private getMockAnalysisResult(request: AIAnalysisRequest): AIAnalysisResponse {
+  private getMockAnalysisResult<T = Record<string, unknown>>(request: AIAnalysisRequest<T>): AIAnalysisResponse {
     // Return appropriate mock data based on request type
     switch (request.type) {
       case 'portfolio':

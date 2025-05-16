@@ -40,7 +40,7 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/brain-icon-v2.svg?v=2" />
         <meta name="theme-color" content="#000000" />
       </head>
-      <body className={inter.className}>
+      <body className={inter.className} data-gptw="">
         <RootProvider>
           {children}
         </RootProvider>
