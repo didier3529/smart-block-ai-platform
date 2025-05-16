@@ -13,7 +13,7 @@
     "lint": "next lint",
     "restart": "npm run clean && npm run dev",
     "stable": "powershell -File restart-stable.ps1",
-    "postinstall": "node -e \"try { require('fs').unlinkSync(require('path').join(process.cwd(), 'node_modules', '@next', 'swc-win32-x64-msvc')); } catch (e) {}\"",
+    "postinstall": "prisma generate && node -e \"try { require('fs').unlinkSync(require('path').join(process.cwd(), 'node_modules', '@next', 'swc-win32-x64-msvc')); } catch (e) {}\"",
     "maintenance:check-duplicates": "node scripts/check-duplicates.js",
     "maintenance:rename-hooks": "node scripts/rename-hooks.js",
     "maintenance:rename-components": "node scripts/rename-components.js",
