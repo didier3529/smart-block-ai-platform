@@ -686,6 +686,15 @@ export class NFTService {
     // Fallback to placeholder
     return '/images/nft-placeholder.png';
   }
+
+  /**
+   * Get all NFT collections
+   */
+  public async getNFTCollections(limit: number = 20, cursor?: string): Promise<PaginatedCollectionResponse> {
+    // Implementation of getNFTCollections method
+    // This method should return a PaginatedCollectionResponse object
+    throw new Error("Method not implemented");
+  }
 }
 
 // Create and export a singleton instance
@@ -697,7 +706,7 @@ export default NFTService;
 /**
  * Get NFT collections - exported function to match what nft-provider.tsx expects
  */
-export const getNftCollections = async (): Promise<any> => {
+export const getNftCollections = async (): Promise<NFTCollection[]> => {
   try {
     console.log('[NFTService] Fetching NFT collections from Moralis API...');
     const marketOverview = await nftService.getNFTMarketOverview();
@@ -926,9 +935,9 @@ export const getNftCollections = async (): Promise<any> => {
     console.log(`[NFTService] Returning ${collections.length} unique formatted collections with names:`, 
       collections.map(c => c.name).join(', '));
     
-    return { collections };
+    return collections;
   } catch (error) {
     console.error('[NFTService] Error in getNftCollections:', error);
-    return { collections: [] };
+    return [];
   }
 };

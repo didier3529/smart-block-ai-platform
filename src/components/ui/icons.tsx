@@ -19,6 +19,11 @@ export const Icons = {
   nft: (props: React.SVGProps<SVGSVGElement>) => (
     <svg viewBox="0 0 24 24" fill="none" {...props}><rect x="4" y="4" width="16" height="16" rx="4" stroke="currentColor" strokeWidth={2}/><text x="12" y="16" textAnchor="middle" fontSize="8" fill="currentColor">NFT</text></svg>
   ),
+  verified: (props: React.SVGProps<SVGSVGElement>) => (
+    <svg viewBox="0 0 24 24" fill="none" {...props}>
+      <path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-9.618 5.04c-.178.018-.35.038-.522.059v.062C1.86 17.802 5.055 21.5 12 21.5c6.945 0 10.14-3.698 10.14-13.395v-.062a13.94 13.94 0 01-.522-.059 11.955 11.955 0 01-9.618-5.04z" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  ),
   arrowUp: (props: React.SVGProps<SVGSVGElement>) => (
     <svg viewBox="0 0 24 24" fill="none" {...props}><path d="M12 19V5M5 12l7-7 7 7" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"/></svg>
   ),

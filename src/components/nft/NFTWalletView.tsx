@@ -1,18 +1,27 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { 
-  Container, Grid, Typography, Box, Card, CardMedia, CardContent, 
-  Skeleton, Paper, TextField, Button, InputAdornment, Chip, Stack,
-  Alert
-} from '@mui/material';
-import { NFTItem } from '@/lib/types/nft-types';
+import { NFTItem, NFTAttribute } from '@/lib/types/nft-types';
 import { nftService } from '@/lib/services/nft-service';
-import SearchIcon from '@mui/icons-material/Search';
 import { isValidEthAddress } from '@/lib/utils/address-utils';
 import Link from 'next/link';
-import { useTheme } from '@mui/material/styles';
+import Image from 'next/image';
 import { useAccount } from '@/lib/hooks/use-account';
+import { 
+  Card, 
+  CardContent, 
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardFooter
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { Icons } from "@/components/ui/icons";
+import { Search } from "lucide-react";
 
 export default function NFTWalletView() {
   const [nfts, setNfts] = useState<NFTItem[]>([]);
@@ -21,7 +30,6 @@ export default function NFTWalletView() {
   const [searchAddress, setSearchAddress] = useState('');
   const [inputAddress, setInputAddress] = useState('');
   const { account, isConnected } = useAccount();
-  const theme = useTheme();
 
   useEffect(() => {
     if (account?.address && isConnected) {
@@ -67,148 +75,120 @@ export default function NFTWalletView() {
   };
 
   return (
-    <Container maxWidth="xl" sx={{ py: 4 }}>
-      <Typography variant="h4" component="h1" gutterBottom fontWeight="bold" sx={{ mt: 2, mb: 4 }}>
+    <div className="container mx-auto px-4 py-8">
+      <h1 className="text-3xl font-bold mb-8 mt-2">
         NFT Wallet
-      </Typography>
+      </h1>
 
       {/* Wallet search form */}
-      <Paper elevation={2} sx={{ p: 3, mb: 4, borderRadius: 2 }}>
-        <form onSubmit={handleSubmit}>
-          <Grid container spacing={2} alignItems="center">
-            <Grid item xs={12} sm={8} md={9} lg={10}>
-              <TextField
-                fullWidth
-                variant="outlined"
+      <Card className="mb-6">
+        <CardContent className="p-6">
+          <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-3">
+            <div className="flex-1 relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                className="pl-9"
                 placeholder="Enter wallet address or use 'demo' for sample data"
                 value={inputAddress}
                 onChange={(e) => setInputAddress(e.target.value)}
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <SearchIcon />
-                    </InputAdornment>
-                  ),
-                }}
               />
-            </Grid>
-            <Grid item xs={12} sm={4} md={3} lg={2}>
-              <Button 
-                fullWidth 
-                variant="contained" 
-                color="primary"
-                type="submit"
-              >
-                View NFTs
-              </Button>
-            </Grid>
-          </Grid>
-        </form>
-      </Paper>
+            </div>
+            <Button type="submit">
+              View NFTs
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
 
       {error && (
-        <Alert severity="error" sx={{ mb: 3 }}>
-          {error}
+        <Alert variant="destructive" className="mb-6">
+          <AlertDescription>
+            {error}
+          </AlertDescription>
         </Alert>
       )}
 
-      <Box sx={{ mb: 2 }}>
-        <Typography variant="h6" component="h2">
+      <div className="mb-4">
+        <h2 className="text-xl font-semibold">
           {searchAddress === 'demo' 
             ? 'Sample NFT Collection' 
             : `NFTs for ${searchAddress.substring(0, 6)}...${searchAddress.substring(searchAddress.length - 4)}`}
-        </Typography>
-      </Box>
+        </h2>
+      </div>
 
       {loading ? (
-        <Grid container spacing={3}>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {[1, 2, 3, 4].map((item) => (
-            <Grid item xs={12} sm={6} md={4} lg={3} key={item}>
-              <Card elevation={2}>
-                <Skeleton variant="rectangular" height={260} animation="wave" />
-                <CardContent>
-                  <Skeleton animation="wave" height={25} width="60%" />
-                  <Skeleton animation="wave" height={20} width="40%" />
-                  <Skeleton animation="wave" height={20} width="70%" />
+            <Card key={item} className="overflow-hidden">
+              <Skeleton className="h-64 w-full" />
+              <CardContent className="p-4">
+                <Skeleton className="h-6 w-3/5 mb-2" />
+                <Skeleton className="h-4 w-2/5 mb-1" />
+                <Skeleton className="h-4 w-4/5" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      ) : nfts.length > 0 ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          {nfts.map((nft) => (
+            <Link 
+              href={`/nft/item/${nft.token_address}/${nft.token_id}`}
+              key={`${nft.token_address}-${nft.token_id}`}
+              className="block h-full"
+            >
+              <Card className="h-full overflow-hidden transition-all duration-200 hover:shadow-lg hover:-translate-y-1">
+                <div className="relative h-64 w-full">
+                  <Image
+                    src={nftService.getNFTImageUrl(nft) || '/images/nft-placeholder.png'}
+                    alt={nft.normalized_metadata?.name || `NFT #${nft.token_id}`}
+                    fill
+                    className="object-cover"
+                  />
+                </div>
+                <CardContent className="p-4">
+                  <h3 className="text-lg font-medium truncate">
+                    {nft.normalized_metadata?.name || `#${nft.token_id}`}
+                  </h3>
+                  
+                  <p className="text-sm text-muted-foreground">
+                    {nft.name}
+                  </p>
+                  
+                  <p className="text-xs text-muted-foreground mb-2">
+                    Token ID: {nft.token_id?.length > 8 
+                      ? `${nft.token_id.substring(0, 8)}...` 
+                      : nft.token_id}
+                  </p>
+                  
+                  {nft.normalized_metadata?.attributes && (
+                    <div className="mt-2 flex flex-wrap gap-1">
+                      {(nft.normalized_metadata.attributes as NFTAttribute[]).slice(0, 2).map((attr, index) => (
+                        <Badge 
+                          key={index}
+                          variant="outline"
+                          className="truncate max-w-full text-xs"
+                        >
+                          {attr.trait_type}: {attr.value}
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
-            </Grid>
+            </Link>
           ))}
-        </Grid>
-      ) : nfts.length > 0 ? (
-        <Grid container spacing={3}>
-          {nfts.map((nft) => (
-            <Grid item xs={12} sm={6} md={4} lg={3} key={`${nft.token_address}-${nft.token_id}`}>
-              <Link 
-                href={`/nft/item/${nft.token_address}/${nft.token_id}`}
-                style={{ textDecoration: 'none', color: 'inherit' }}
-              >
-                <Card 
-                  elevation={2} 
-                  sx={{ 
-                    height: '100%', 
-                    display: 'flex', 
-                    flexDirection: 'column',
-                    transition: 'transform 0.2s, box-shadow 0.2s',
-                    '&:hover': {
-                      transform: 'translateY(-4px)',
-                      boxShadow: theme.shadows[8],
-                    }
-                  }}
-                >
-                  <CardMedia
-                    component="img"
-                    height={260}
-                    image={nftService.getNFTImageUrl(nft) || '/images/nft-placeholder.png'}
-                    alt={nft.normalized_metadata?.name || `NFT #${nft.token_id}`}
-                    sx={{ objectFit: 'cover' }}
-                  />
-                  <CardContent sx={{ flexGrow: 1 }}>
-                    <Typography variant="h6" component="h3" noWrap>
-                      {nft.normalized_metadata?.name || `#${nft.token_id}`}
-                    </Typography>
-                    
-                    <Typography variant="body2" color="text.secondary" gutterBottom>
-                      {nft.name}
-                    </Typography>
-                    
-                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
-                      Token ID: {nft.token_id?.length > 8 
-                        ? `${nft.token_id.substring(0, 8)}...` 
-                        : nft.token_id}
-                    </Typography>
-                    
-                    {nft.normalized_metadata?.attributes && (
-                      <Box sx={{ mt: 1 }}>
-                        <Stack direction="row" spacing={0.5} flexWrap="wrap" gap={0.5}>
-                          {(nft.normalized_metadata.attributes as any[]).slice(0, 2).map((attr, index) => (
-                            <Chip 
-                              key={index}
-                              label={`${attr.trait_type}: ${attr.value}`} 
-                              size="small"
-                              variant="outlined"
-                              sx={{ maxWidth: '100%', height: 'auto', '& .MuiChip-label': { whiteSpace: 'normal' } }}
-                            />
-                          ))}
-                        </Stack>
-                      </Box>
-                    )}
-                  </CardContent>
-                </Card>
-              </Link>
-            </Grid>
-          ))}
-        </Grid>
+        </div>
       ) : (
-        <Box sx={{ p: 4, textAlign: 'center' }}>
-          <Typography variant="h6" color="text.secondary">
+        <div className="text-center p-12 border rounded-lg">
+          <h3 className="text-lg font-medium text-muted-foreground">
             No NFTs found for this wallet
-          </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+          </h3>
+          <p className="text-sm text-muted-foreground mt-2">
             Either the wallet doesn't own any NFTs or there was an error retrieving them.
-          </Typography>
-        </Box>
+          </p>
+        </div>
       )}
-    </Container>
+    </div>
   );
 } 
