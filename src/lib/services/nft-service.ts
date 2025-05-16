@@ -195,6 +195,12 @@ export class NFTService {
             if (item.collection_address) {
               const normalizedAddress = item.collection_address.toLowerCase();
               const collectionInfo = knownCollections[normalizedAddress];
-              
               if (collectionInfo) {
                 if (!item.name) item.name = collectionInfo.name;
+                if (!item.image) item.image = collectionInfo.image;
+              }
+            }
+            return item;
+          });
+        }
+        // ... rest of the file remains unchanged ...
