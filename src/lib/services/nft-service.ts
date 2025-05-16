@@ -203,4 +203,79 @@ export class NFTService {
             return item;
           });
         }
-        // ... rest of the file remains unchanged ...
+        // Add names and images to any top items where the API didn't provide them
+        if (marketData.top) {
+          marketData.top = marketData.top.map(item => {
+            if (item.collection_address) {
+              const normalizedAddress = item.collection_address.toLowerCase();
+              const collectionInfo = knownCollections[normalizedAddress];
+              if (collectionInfo) {
+                if (!item.name) item.name = collectionInfo.name;
+                if (!item.image) item.image = collectionInfo.image;
+              }
+            }
+            return item;
+          });
+        }
+        // Transform data if needed to match our interface
+        return {
+          trending: marketData.trending?.slice(0, 8) || [],
+          top: marketData.top?.slice(0, 8) || [],
+          walletNFTs: marketData.walletNFTs || mockNFTMarket.walletNFTs // Use mock wallet NFTs if real data doesn't have them
+        };
+      } else {
+        console.warn('[NFTService] API returned empty or invalid data, using mock data');
+        // Use mock data if response is empty or invalid
+        return mockNFTMarket;
+      }
+    } catch (error) {
+      console.error('[NFTService] Error fetching NFT market data, using mock data', error);
+      return mockNFTMarket;
+    }
+  }
+}
+
+// Create and export a singleton instance
+export const nftService = new NFTService();
+
+// Also export the class for testing or custom instances
+export default NFTService;
+
+export const getNftCollections = async (): Promise<NFTCollection[]> => {
+  try {
+    console.log('[NFTService] Fetching NFT collections from Moralis API...');
+    const marketOverview = await nftService.getNFTMarketOverview();
+    console.log(`[NFTService] Received ${marketOverview.trending?.length || 0} trending and ${marketOverview.top?.length || 0} top collections`);
+    // ... rest of the function ...
+  } catch (error) {
+    console.error('[NFTService] Error in getNftCollections:', error);
+    return [];
+  }
+};
+
+export const getNftCollectionById = async (collectionId: string) => {
+  return nftService.getNFTCollectionDetails(collectionId);
+};
+
+export const getNfts = async (filters?: any) => {
+  return nftService.getNFTCollections(filters?.limit || 20, filters?.cursor);
+};
+
+export const getNftDetails = async (contractAddress: string, tokenId: string) => {
+  return nftService.getNFTItem(contractAddress, tokenId);
+};
+
+export const getNftsByCollectionId = async (collectionId: string, page: number = 1, pageSize: number = 10) => {
+  const collection = await nftService.getNFTCollectionDetails(collectionId);
+  if (collection && Array.isArray((collection as any).nfts)) {
+    const nfts = (collection as any).nfts;
+    const start = (page - 1) * pageSize;
+    return {
+      items: nfts.slice(start, start + pageSize),
+      total: nfts.length,
+      page,
+      pageSize
+    };
+  }
+  return { items: [], total: 0, page, pageSize };
+};
