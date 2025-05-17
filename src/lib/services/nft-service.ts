@@ -22,14 +22,14 @@ import mockNFTMarket from '../mock-data/nft-market-mock';
 
 // Alchemy SDK setup
 const settings = {
-  // Always use the demo key when the API key isn't working
-  apiKey: "demo", 
+  // Use the environment variable for the API key, fallback to 'demo' if not set
+  apiKey: process.env.NEXT_PUBLIC_ALCHEMY_API_KEY || "demo",
   network: Network.ETH_MAINNET
 };
 
-// The demo key should always work
-const hasValidApiKey = true;
-console.log(`[NFTService] Using Alchemy with API key: Demo API key`);
+// Log which API key is being used (mask all but last 4 chars)
+const maskedKey = settings.apiKey.length > 4 ? '****' + settings.apiKey.slice(-4) : settings.apiKey;
+console.log(`[NFTService] Using Alchemy with API key: ${maskedKey}`);
 console.log(`[NFTService] Network: ${settings.network}`);
 
 // Force restart alchemy client with the proper key
@@ -84,6 +84,24 @@ const API_CREDIT_ERROR_MESSAGES = [
   'request failed with status code 429',
   'request failed with status code 401'
 ];
+
+// Helper to check if an image is a public CDN (OpenSea) or S3
+function getSafeCollectionImage(image, address) {
+  // If image is missing or is an S3 URL, use OpenSea CDN if available
+  const openSeaImages = {
+    '0xbc4ca0eda7647a8ab7c2061c2e118a18a936f13d': 'https://i.seadn.io/gae/Ju9CkWtV-1Okvf45wo8UctR-M9He2PjILP0oOvxE89AyiPPGtrR3gysu1Zgy0hjd2xKIgjJJtWIc0ybj4Vd7wv8t3pxDGHoJBzDB?w=500&auto=format',
+    '0xb47e3cd837ddf8e4c57f05d70ab865de6e193bbb': 'https://i.seadn.io/gae/BdxvLseXcfl57BiuQcQYdJ64v-aI8din7WPk0Pgo3qQFhAUH-B6i-dCqqc_mCkRIzULmwzwecnohLhrcH8A9mpWIZqA7ygc52Sr81hE?w=500&auto=format',
+    '0x60e4d786628fea6478f785a6d7e704777c86a7c6': 'https://i.seadn.io/gae/lHexKRMpw-aoSyB1WdFBff5yfANLReFxHzt1DOj_sg7mS14yARpuvYcUtsyyx-Nkpk6WTcUPFoG53VnLJezYi8hAs0OxNZwlw6Y-dmI?w=500&auto=format',
+    '0xed5af388653567af2f388e6224dc7c4b3241c544': 'https://i.seadn.io/gae/H8jOCJuQokNqGBpkBN5wk1oZwO7LM8bNnrHCaekV2nKjnCqw6UB5oaH8XyNeBDj6bA_n1mjejzhFQUP3O1NfjFLHr3FOaeHcTOOT?w=500&auto=format',
+    '0x8a90cab2b38dba80c64b7734e58ee1db38b8992e': 'https://i.seadn.io/gae/7B0qai02OdHA8P_EOVK672qUliyjQdQDGNrACxs7WnTgZAkJa_wWURnIFKeOh5VTf8cfTqW3wQpozGedaC9mteKphEOtztls02RlWQ?w=500&auto=format',
+    '0x49cf6f5d44e70224e2e23fdcdd2c053f30ada28b': 'https://i.seadn.io/gae/XN0XuD8Uh3jyRWNtPTFeXJg_ht8m5ofDx6aHklOiy4amhFuWUa0JaR6It49AH8tlnYS386Q0TW_-Lmedn0UET_ko1a3CbJGeu5iHMg?w=500&auto=format'
+  };
+  if (!image || image.includes('s3.amazonaws.com')) {
+    const safe = openSeaImages[address?.toLowerCase()];
+    return safe || '/images/nft-placeholder.png';
+  }
+  return image;
+}
 
 /**
  * NFT Service for fetching NFT data using Moralis API with mock data fallback
@@ -197,7 +215,9 @@ export class NFTService {
               const collectionInfo = knownCollections[normalizedAddress];
               if (collectionInfo) {
                 if (!item.name) item.name = collectionInfo.name;
-                if (!item.image) item.image = collectionInfo.image;
+                item.image = getSafeCollectionImage(item.image || collectionInfo.image, normalizedAddress);
+              } else {
+                item.image = getSafeCollectionImage(item.image, normalizedAddress);
               }
             }
             return item;
@@ -211,7 +231,9 @@ export class NFTService {
               const collectionInfo = knownCollections[normalizedAddress];
               if (collectionInfo) {
                 if (!item.name) item.name = collectionInfo.name;
-                if (!item.image) item.image = collectionInfo.image;
+                item.image = getSafeCollectionImage(item.image || collectionInfo.image, normalizedAddress);
+              } else {
+                item.image = getSafeCollectionImage(item.image, normalizedAddress);
               }
             }
             return item;
@@ -233,6 +255,26 @@ export class NFTService {
       return mockNFTMarket;
     }
   }
+
+  /**
+   * Helper function to get image URL for an NFT with fallback
+   */
+  public getNFTImageUrl(nft: NFTItem, size: 'low' | 'medium' | 'high' | 'original' = 'medium'): string {
+    // Try to get media collection images first
+    const mediaCollection = nft.media?.media_collection;
+    if (mediaCollection) {
+      const sizedImage = mediaCollection[size]?.url || mediaCollection.original?.url;
+      if (sizedImage && !sizedImage.includes('s3.amazonaws.com')) return sizedImage;
+    }
+    
+    // Try normalized metadata image
+    if (nft.normalized_metadata?.image && !nft.normalized_metadata.image.includes('s3.amazonaws.com')) {
+      return nft.normalized_metadata.image;
+    }
+    
+    // Fallback to placeholder
+    return '/images/nft-placeholder.png';
+  }
 }
 
 // Create and export a singleton instance
@@ -246,7 +288,119 @@ export const getNftCollections = async (): Promise<NFTCollection[]> => {
     console.log('[NFTService] Fetching NFT collections from Moralis API...');
     const marketOverview = await nftService.getNFTMarketOverview();
     console.log(`[NFTService] Received ${marketOverview.trending?.length || 0} trending and ${marketOverview.top?.length || 0} top collections`);
-    // ... rest of the function ...
+    
+    // Create a combined list from trending and top collections
+    const collections = [];
+    
+    // Add trending collections first
+    if (marketOverview.trending && marketOverview.trending.length > 0) {
+      for (const item of marketOverview.trending) {
+        if (item.collection_address && item.name) {
+          collections.push({
+            address: item.collection_address,
+            name: item.name,
+            symbol: "",
+            contractType: "ERC721",
+            description: "",
+            floorPrice: item.floor_price || 0,
+            floorPriceChange: item.floor_price_24hr_percent_change || 0,
+            totalVolume: item.volume_usd || 0,
+            ownerCount: item.owners_count || 0,
+            itemCount: item.items_total || 0,
+            image: item.image || '/images/nft-placeholder.png',
+            verified: item.verified_collection || false,
+            createdAt: new Date().toISOString()
+          });
+        }
+      }
+    }
+    
+    // Add top collections if needed
+    if (collections.length < 5 && marketOverview.top && marketOverview.top.length > 0) {
+      for (const item of marketOverview.top) {
+        if (collections.length >= 5) break;
+        
+        if (item.collection_address && item.name && 
+            !collections.some(c => c.address === item.collection_address)) {
+          collections.push({
+            address: item.collection_address,
+            name: item.name,
+            symbol: "",
+            contractType: "ERC721",
+            description: "",
+            floorPrice: item.floor_price || 0,
+            floorPriceChange: item.floor_price_24hr_percent_change || 0,
+            totalVolume: item.volume_usd || 0,
+            ownerCount: item.owners_count || 0,
+            itemCount: item.items_total || 0,
+            image: item.image || '/images/nft-placeholder.png',
+            verified: item.verified_collection || false,
+            createdAt: new Date().toISOString()
+          });
+        }
+      }
+    }
+    
+    // If we still don't have enough collections, add some major ones
+    if (collections.length < 5) {
+      const additionalCollections = [
+        {
+          address: '0xbc4ca0eda7647a8ab7c2061c2e118a18a936f13d',
+          name: 'Bored Ape Yacht Club',
+          symbol: "BAYC",
+          contractType: "ERC721",
+          description: "The Bored Ape Yacht Club is a collection of 10,000 unique Bored Ape NFTs",
+          floorPrice: 12.5,
+          floorPriceChange: -2.21,
+          totalVolume: 1108635,
+          ownerCount: 6400,
+          itemCount: 10000,
+          image: 'https://i.seadn.io/gae/Ju9CkWtV-1Okvf45wo8UctR-M9He2PjILP0oOvxE89AyiPPGtrR3gysu1Zgy0hjd2xKIgjJJtWIc0ybj4Vd7wv8t3pxDGHoJBzDB?w=500&auto=format',
+          verified: true,
+          createdAt: new Date().toISOString()
+        },
+        {
+          address: '0xb47e3cd837ddf8e4c57f05d70ab865de6e193bbb',
+          name: 'CryptoPunks',
+          symbol: "PUNK",
+          contractType: "ERC721",
+          description: "CryptoPunks launched as a fixed set of 10,000 items in mid-2017 and became one of the inspirations for the ERC-721 standard.",
+          floorPrice: 46.99,
+          floorPriceChange: -3.85,
+          totalVolume: 256318,
+          ownerCount: 3500,
+          itemCount: 10000,
+          image: 'https://i.seadn.io/gae/BdxvLseXcfl57BiuQcQYdJ64v-aI8din7WPk0Pgo3qQFhAUH-B6i-dCqqc_mCkRIzULmwzwecnohLhrcH8A9mpWIZqA7ygc52Sr81hE?w=500&auto=format',
+          verified: true,
+          createdAt: new Date().toISOString()
+        },
+        {
+          address: '0x8a90cab2b38dba80c64b7734e58ee1db38b8992e',
+          name: 'Doodles',
+          symbol: "DOODLE",
+          contractType: "ERC721",
+          description: "A community-driven collectibles project featuring art by Burnt Toast.",
+          floorPrice: 1.25,
+          floorPriceChange: -4.66,
+          totalVolume: 354672,
+          ownerCount: 5200,
+          itemCount: 10000,
+          image: 'https://i.seadn.io/gae/7B0qai02OdHA8P_EOVK672qUliyjQdQDGNrACxs7WnTgZAkJa_wWURnIFKeOh5VTf8cfTqW3wQpozGedaC9mteKphEOtztls02RlWQ?w=500&auto=format',
+          verified: true,
+          createdAt: new Date().toISOString()
+        }
+      ];
+      
+      for (const collection of additionalCollections) {
+        if (collections.length >= 5) break;
+        if (!collections.some(c => c.address === collection.address)) {
+          collections.push(collection);
+        }
+      }
+    }
+    
+    // Limit to 5 collections
+    return collections.slice(0, 5);
   } catch (error) {
     console.error('[NFTService] Error in getNftCollections:', error);
     return [];
