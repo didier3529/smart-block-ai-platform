@@ -1,24 +1,14 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { Container, Grid, Typography, Box, Card, CardMedia, CardContent, Skeleton, Chip, Stack } from '@mui/material';
 import { NFTMarketOverview } from '@/lib/types/nft-types';
 import { nftService } from '@/lib/services/nft-service';
+import VerifiedIcon from '@mui/icons-material/Verified';
 import { formatCurrency } from '@/lib/utils/format-utils';
 import Link from 'next/link';
-import Image from 'next/image';
-import { 
-  Card, 
-  CardContent, 
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  CardFooter
-} from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Icons } from "@/components/ui/icons";
-import { useMediaQuery } from "@/lib/hooks/use-media-query";
+import { useTheme } from '@mui/material/styles';
+import useMediaQuery from '@mui/material/useMediaQuery';
 
 /**
  * NFT Marketplace component showing trending and top NFT collections
@@ -27,7 +17,8 @@ export default function NFTMarketplace() {
   const [marketData, setMarketData] = useState<NFTMarketOverview | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const isMobile = useMediaQuery("(max-width: 640px)");
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   useEffect(() => {
     const fetchMarketData = async () => {
@@ -49,146 +40,186 @@ export default function NFTMarketplace() {
 
   // Format percentage change with color
   const formatPercentageChange = (value: number) => {
-    const color = value >= 0 ? 'text-green-500' : 'text-red-500';
+    const color = value >= 0 ? 'success.main' : 'error.main';
     const formattedValue = value >= 0 ? `+${value.toFixed(2)}%` : `${value.toFixed(2)}%`;
-    return <span className={color}>{formattedValue}</span>;
+    return <Typography variant="body2" component="span" color={color}>{formattedValue}</Typography>;
   };
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-8 mt-2">
+    <Container maxWidth="xl" sx={{ py: 4 }}>
+      <Typography variant="h4" component="h1" gutterBottom fontWeight="bold" sx={{ mt: 2, mb: 4 }}>
         NFT Marketplace
-      </h1>
+      </Typography>
 
       {error && (
-        <div className="my-4 p-4 bg-red-500 text-white rounded">
+        <Box sx={{ my: 2, p: 2, bgcolor: 'error.main', color: 'white', borderRadius: 1 }}>
           {error}
-        </div>
+        </Box>
       )}
 
-      <h2 className="text-xl font-semibold mb-4">
+      <Typography variant="h5" component="h2" gutterBottom sx={{ mb: 3 }}>
         Trending Collections
-      </h2>
+      </Typography>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+      <Grid container spacing={3}>
         {loading 
           ? Array.from(new Array(4)).map((_, index) => (
-              <Card key={`skeleton-trending-${index}`} className="overflow-hidden">
-                <Skeleton className="h-48 w-full" />
-                <CardContent className="p-4">
-                  <Skeleton className="h-6 w-4/5 mb-2" />
-                  <Skeleton className="h-4 w-2/5 mb-1" />
-                  <Skeleton className="h-4 w-3/5" />
-                </CardContent>
-              </Card>
+              <Grid item xs={12} sm={6} md={4} lg={3} key={`skeleton-trending-${index}`}>
+                <Card elevation={2}>
+                  <Skeleton variant="rectangular" height={200} animation="wave" />
+                  <CardContent>
+                    <Skeleton animation="wave" height={25} width="80%" />
+                    <Skeleton animation="wave" height={20} width="40%" />
+                    <Skeleton animation="wave" height={20} width="60%" />
+                  </CardContent>
+                </Card>
+              </Grid>
             ))
           : marketData?.trending?.map((collection) => (
-              <Link 
-                href={`/nft/collection/${collection.collection_address}`}
-                key={collection.collection_address}
-                className="block h-full"
-              >
-                <Card className="h-full overflow-hidden transition-all duration-200 hover:shadow-lg hover:-translate-y-1">
-                  <div className="relative h-48 w-full">
-                    <Image
-                      src={collection.image || '/images/nft-placeholder.png'}
+              <Grid item xs={12} sm={6} md={4} lg={3} key={collection.collection_address}>
+                <Link 
+                  href={`/nft/collection/${collection.collection_address}`}
+                  style={{ textDecoration: 'none', color: 'inherit' }}
+                >
+                  <Card 
+                    elevation={2} 
+                    sx={{ 
+                      height: '100%', 
+                      display: 'flex', 
+                      flexDirection: 'column',
+                      transition: 'transform 0.2s, box-shadow 0.2s',
+                      '&:hover': {
+                        transform: 'translateY(-4px)',
+                        boxShadow: theme.shadows[8],
+                      }
+                    }}
+                  >
+                    <CardMedia
+                      component="img"
+                      height={200}
+                      image={collection.image || '/images/nft-placeholder.png'}
                       alt={collection.name}
-                      fill
-                      className="object-cover"
+                      sx={{ objectFit: 'cover' }}
                     />
-                  </div>
-                  <CardContent className="p-4">
-                    <div className="flex items-center mb-2">
-                      <h3 className="text-lg font-medium truncate">
-                        {collection.name}
-                      </h3>
-                      {collection.verified_collection && (
-                        <Icons.verified className="h-4 w-4 ml-1 text-blue-500" />
-                      )}
-                    </div>
-                    
-                    <div className="flex flex-wrap gap-2 mb-3">
-                      <Badge variant="outline" className="bg-primary/10">
-                        Floor: {formatCurrency(collection.floor_price || 0, 'ETH')} ETH
-                      </Badge>
-                      <Badge variant={collection.floor_price_24hr_percent_change >= 0 ? "outline" : "destructive"} className={collection.floor_price_24hr_percent_change >= 0 ? "bg-green-500/10" : ""}>
-                        {formatPercentageChange(collection.floor_price_24hr_percent_change || 0)}
-                      </Badge>
-                    </div>
-                    
-                    <p className="text-sm text-muted-foreground">
-                      {collection.items_total?.toLocaleString() || '0'} items
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      Vol: {formatCurrency(collection.volume_usd || 0, 'USD')}
-                    </p>
-                  </CardContent>
-                </Card>
-              </Link>
+                    <CardContent sx={{ flexGrow: 1 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                        <Typography variant="h6" component="h3" noWrap>
+                          {collection.name}
+                        </Typography>
+                        {collection.verified_collection && (
+                          <VerifiedIcon color="primary" fontSize="small" sx={{ ml: 0.5 }} />
+                        )}
+                      </Box>
+                      
+                      <Stack direction="row" spacing={1} sx={{ mb: 1.5 }}>
+                        <Chip 
+                          label={`Floor: ${formatCurrency(collection.floor_price || 0, 'ETH')} ETH`} 
+                          size="small"
+                          color="primary"
+                          variant="outlined"
+                        />
+                        <Chip
+                          label={formatPercentageChange(collection.floor_price_24hr_percent_change || 0)}
+                          size="small"
+                          variant="outlined"
+                          color={collection.floor_price_24hr_percent_change >= 0 ? "success" : "error"}
+                        />
+                      </Stack>
+                      
+                      <Typography variant="body2" color="text.secondary">
+                        {collection.items_total?.toLocaleString() || '0'} items
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        Vol: {formatCurrency(collection.volume_usd || 0, 'USD')}
+                      </Typography>
+                    </CardContent>
+                  </Card>
+                </Link>
+              </Grid>
             ))}
-      </div>
+      </Grid>
 
-      <h2 className="text-xl font-semibold mb-4 mt-12">
+      <Typography variant="h5" component="h2" gutterBottom sx={{ mt: 6, mb: 3 }}>
         Top Collections
-      </h2>
+      </Typography>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+      <Grid container spacing={3}>
         {loading 
           ? Array.from(new Array(4)).map((_, index) => (
-              <Card key={`skeleton-top-${index}`} className="overflow-hidden">
-                <Skeleton className="h-48 w-full" />
-                <CardContent className="p-4">
-                  <Skeleton className="h-6 w-4/5 mb-2" />
-                  <Skeleton className="h-4 w-2/5 mb-1" />
-                  <Skeleton className="h-4 w-3/5" />
-                </CardContent>
-              </Card>
-            ))
-          : marketData?.top?.map((collection) => (
-              <Link 
-                href={`/nft/collection/${collection.collection_address}`}
-                key={collection.collection_address}
-                className="block h-full"
-              >
-                <Card className="h-full overflow-hidden transition-all duration-200 hover:shadow-lg hover:-translate-y-1">
-                  <div className="relative h-48 w-full">
-                    <Image
-                      src={collection.image || '/images/nft-placeholder.png'}
-                      alt={collection.name}
-                      fill
-                      className="object-cover"
-                    />
-                  </div>
-                  <CardContent className="p-4">
-                    <div className="flex items-center mb-2">
-                      <h3 className="text-lg font-medium truncate">
-                        {collection.name}
-                      </h3>
-                      {collection.verified_collection && (
-                        <Icons.verified className="h-4 w-4 ml-1 text-blue-500" />
-                      )}
-                    </div>
-                    
-                    <div className="flex flex-wrap gap-2 mb-3">
-                      <Badge variant="outline" className="bg-primary/10">
-                        Floor: {formatCurrency(collection.floor_price || 0, 'ETH')} ETH
-                      </Badge>
-                      <Badge variant={collection.floor_price_24hr_percent_change >= 0 ? "outline" : "destructive"} className={collection.floor_price_24hr_percent_change >= 0 ? "bg-green-500/10" : ""}>
-                        {formatPercentageChange(collection.floor_price_24hr_percent_change || 0)}
-                      </Badge>
-                    </div>
-                    
-                    <p className="text-sm text-muted-foreground">
-                      {collection.items_total?.toLocaleString() || '0'} items
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      Vol: {formatCurrency(collection.volume_usd || 0, 'USD')}
-                    </p>
+              <Grid item xs={12} sm={6} md={4} lg={3} key={`skeleton-top-${index}`}>
+                <Card elevation={2}>
+                  <Skeleton variant="rectangular" height={200} animation="wave" />
+                  <CardContent>
+                    <Skeleton animation="wave" height={25} width="80%" />
+                    <Skeleton animation="wave" height={20} width="40%" />
+                    <Skeleton animation="wave" height={20} width="60%" />
                   </CardContent>
                 </Card>
-              </Link>
+              </Grid>
+            ))
+          : marketData?.top?.map((collection) => (
+              <Grid item xs={12} sm={6} md={4} lg={3} key={collection.collection_address}>
+                <Link 
+                  href={`/nft/collection/${collection.collection_address}`}
+                  style={{ textDecoration: 'none', color: 'inherit' }}
+                >
+                  <Card 
+                    elevation={2} 
+                    sx={{ 
+                      height: '100%', 
+                      display: 'flex', 
+                      flexDirection: 'column',
+                      transition: 'transform 0.2s, box-shadow 0.2s',
+                      '&:hover': {
+                        transform: 'translateY(-4px)',
+                        boxShadow: theme.shadows[8],
+                      }
+                    }}
+                  >
+                    <CardMedia
+                      component="img"
+                      height={200}
+                      image={collection.image || '/images/nft-placeholder.png'}
+                      alt={collection.name}
+                      sx={{ objectFit: 'cover' }}
+                    />
+                    <CardContent sx={{ flexGrow: 1 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                        <Typography variant="h6" component="h3" noWrap>
+                          {collection.name}
+                        </Typography>
+                        {collection.verified_collection && (
+                          <VerifiedIcon color="primary" fontSize="small" sx={{ ml: 0.5 }} />
+                        )}
+                      </Box>
+                      
+                      <Stack direction="row" spacing={1} sx={{ mb: 1.5 }}>
+                        <Chip 
+                          label={`Floor: ${formatCurrency(collection.floor_price || 0, 'ETH')} ETH`} 
+                          size="small"
+                          color="primary"
+                          variant="outlined"
+                        />
+                        <Chip
+                          label={formatPercentageChange(collection.floor_price_24hr_percent_change || 0)}
+                          size="small"
+                          variant="outlined"
+                          color={collection.floor_price_24hr_percent_change >= 0 ? "success" : "error"}
+                        />
+                      </Stack>
+                      
+                      <Typography variant="body2" color="text.secondary">
+                        {collection.items_total?.toLocaleString() || '0'} items
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        Vol: {formatCurrency(collection.volume_usd || 0, 'USD')}
+                      </Typography>
+                    </CardContent>
+                  </Card>
+                </Link>
+              </Grid>
             ))}
-      </div>
-    </div>
+      </Grid>
+    </Container>
   );
-} 
+}
