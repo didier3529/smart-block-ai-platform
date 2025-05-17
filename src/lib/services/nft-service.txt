@@ -1,0 +1,30 @@
+NFT MODULE DEBUGGING GUIDE:
+
+If you're still not seeing NFT collections, check the following:
+
+1. Verify your environment variables:
+   - Set NEXT_PUBLIC_USE_MOCK_PRICE_DATA=true in .env.local to guarantee mock data is used
+   - Redeploy after setting this
+
+2. Check browser console logs for:
+   - "[getNftCollections] Starting to fetch NFT collections..." - confirms function is called
+   - "[createCollectionsFromMockData] Created 5 collections" - confirms mock data generation
+   - "[NFTProvider] Fetched collections: {collections: [...]}" - confirms provider receives data
+
+3. Verify NFT provider is initialized:
+   - Make sure <NFTProvider> wraps your components correctly
+   - Check useNFTContext() hook is used properly
+
+4. Verify mock data structure:
+   - Mock data must have trending/top collections to create proper objects
+   - Backup collections should guarantee at least 5 collections
+
+5. Clear your browser cache or try incognito mode to rule out caching issues
+
+When running LOCALLY:
+- The mock data should ALWAYS work even without API keys
+- If it's not working locally, there might be a code error in the nft-provider.tsx component
+
+For quick fix: 
+- Add ?forceRefresh=true to your localhost URL to bypass React Query cache
+- Or press Ctrl+F5 to do a hard refresh
