@@ -1,9 +1,9 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { Menu, X } from "lucide-react"
+import { Menu, X, ChevronDown } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Logo } from "@/components/ui/logo"
 import { useAuth } from "@/lib/providers/auth-provider"
@@ -13,6 +13,15 @@ export function Navbar() {
   const [isOpen, setIsOpen] = useState(false)
   const [isScrolled, setIsScrolled] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  
+  // State for dropdowns
+  const [featuresOpen, setFeaturesOpen] = useState(false)
+  const [aboutOpen, setAboutOpen] = useState(false)
+  
+  // Refs for dropdown menus
+  const featuresRef = useRef<HTMLDivElement>(null)
+  const aboutRef = useRef<HTMLDivElement>(null)
+  
   const router = useRouter()
   const { connectWallet, isAuthenticated } = useAuth()
 
@@ -22,6 +31,21 @@ export function Navbar() {
     }
     window.addEventListener("scroll", handleScroll, { passive: true })
     return () => window.removeEventListener("scroll", handleScroll)
+  }, [])
+  
+  // Close dropdowns when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (featuresRef.current && !featuresRef.current.contains(event.target as Node)) {
+        setFeaturesOpen(false)
+      }
+      if (aboutRef.current && !aboutRef.current.contains(event.target as Node)) {
+        setAboutOpen(false)
+      }
+    }
+    
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
   const handleConnectWallet = useCallback(async () => {
@@ -60,11 +84,20 @@ export function Navbar() {
     }
   }, [isAuthenticated, connectWallet, router])
 
-  // Simple landing page navigation items
-  const navItems = [
-    { label: "Features", href: "#features" },
-    { label: "How it Works", href: "#how-it-works" },
-    { label: "About", href: "/about" },
+  // Features dropdown items
+  const featuresItems = [
+    { label: "Real-time Analytics", href: "#analytics" },
+    { label: "Smart Contracts Audit", href: "#audit" },
+    { label: "AI Predictions", href: "#predictions" },
+    { label: "Market Insights", href: "#insights" },
+  ]
+  
+  // About dropdown items
+  const aboutItems = [
+    { label: "Our Team", href: "/about#team" },
+    { label: "Vision", href: "/about#vision" },
+    { label: "Roadmap", href: "/about#roadmap" },
+    { label: "Partners", href: "/about#partners" },
   ]
 
   return (
@@ -82,15 +115,63 @@ export function Navbar() {
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-6">
             <div className="flex items-center space-x-6 text-sm">
-              {navItems.map(item => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className="text-gray-300 hover:text-white transition-colors"
+              {/* Features Dropdown */}
+              <div className="relative" ref={featuresRef}>
+                <button
+                  onClick={() => setFeaturesOpen(!featuresOpen)}
+                  className="flex items-center text-gray-300 hover:text-white transition-colors"
                 >
-                  {item.label}
-                </Link>
-              ))}
+                  Features <ChevronDown size={16} className={`ml-1 transition-transform ${featuresOpen ? 'rotate-180' : ''}`} />
+                </button>
+                
+                {featuresOpen && (
+                  <div className="absolute left-0 mt-2 w-56 rounded-md shadow-lg bg-black/90 backdrop-blur-md border border-purple-900/50 overflow-hidden z-10">
+                    <div className="py-1 divide-y divide-gray-800/50">
+                      {featuresItems.map((item) => (
+                        <Link
+                          key={item.href}
+                          href={item.href}
+                          className="block px-4 py-3 text-sm text-gray-300 hover:text-white hover:bg-purple-900/20 transition-colors"
+                          onClick={() => setFeaturesOpen(false)}
+                        >
+                          {item.label}
+                        </Link>
+                      ))}
+                    </div>
+                    <div className="absolute inset-0 border border-purple-500/20 rounded-md pointer-events-none"></div>
+                    <div className="absolute inset-0 bg-gradient-to-r from-purple-800/10 to-blue-800/10 rounded-md pointer-events-none"></div>
+                  </div>
+                )}
+              </div>
+              
+              {/* About Dropdown */}
+              <div className="relative" ref={aboutRef}>
+                <button
+                  onClick={() => setAboutOpen(!aboutOpen)}
+                  className="flex items-center text-gray-300 hover:text-white transition-colors"
+                >
+                  About <ChevronDown size={16} className={`ml-1 transition-transform ${aboutOpen ? 'rotate-180' : ''}`} />
+                </button>
+                
+                {aboutOpen && (
+                  <div className="absolute left-0 mt-2 w-56 rounded-md shadow-lg bg-black/90 backdrop-blur-md border border-blue-900/50 overflow-hidden z-10">
+                    <div className="py-1 divide-y divide-gray-800/50">
+                      {aboutItems.map((item) => (
+                        <Link
+                          key={item.href}
+                          href={item.href}
+                          className="block px-4 py-3 text-sm text-gray-300 hover:text-white hover:bg-blue-900/20 transition-colors"
+                          onClick={() => setAboutOpen(false)}
+                        >
+                          {item.label}
+                        </Link>
+                      ))}
+                    </div>
+                    <div className="absolute inset-0 border border-blue-500/20 rounded-md pointer-events-none"></div>
+                    <div className="absolute inset-0 bg-gradient-to-r from-blue-800/10 to-purple-800/10 rounded-md pointer-events-none"></div>
+                  </div>
+                )}
+              </div>
             </div>
             <Button
               onClick={handleConnectWallet}
@@ -110,16 +191,58 @@ export function Navbar() {
         {/* Mobile Navigation Menu */}
         {isOpen && (
           <div className="md:hidden pt-4 pb-6 space-y-4">
-            {navItems.map(item => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className="block py-2 text-gray-300 hover:text-white transition-colors"
-                onClick={() => setIsOpen(false)}
+            {/* Mobile Features */}
+            <div>
+              <button
+                onClick={() => setFeaturesOpen(!featuresOpen)}
+                className="flex items-center justify-between w-full py-2 text-gray-300 hover:text-white transition-colors"
               >
-                {item.label}
-              </Link>
-            ))}
+                <span>Features</span>
+                <ChevronDown size={16} className={`transition-transform ${featuresOpen ? 'rotate-180' : ''}`} />
+              </button>
+              
+              {featuresOpen && (
+                <div className="pl-4 mt-2 space-y-2 border-l border-purple-800/30">
+                  {featuresItems.map((item) => (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      className="block py-2 text-sm text-gray-400 hover:text-white transition-colors"
+                      onClick={() => setIsOpen(false)}
+                    >
+                      {item.label}
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
+            
+            {/* Mobile About */}
+            <div>
+              <button
+                onClick={() => setAboutOpen(!aboutOpen)}
+                className="flex items-center justify-between w-full py-2 text-gray-300 hover:text-white transition-colors"
+              >
+                <span>About</span>
+                <ChevronDown size={16} className={`transition-transform ${aboutOpen ? 'rotate-180' : ''}`} />
+              </button>
+              
+              {aboutOpen && (
+                <div className="pl-4 mt-2 space-y-2 border-l border-blue-800/30">
+                  {aboutItems.map((item) => (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      className="block py-2 text-sm text-gray-400 hover:text-white transition-colors"
+                      onClick={() => setIsOpen(false)}
+                    >
+                      {item.label}
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
+            
             <Button
               onClick={async () => {
                 setIsOpen(false)
@@ -135,4 +258,4 @@ export function Navbar() {
       </div>
     </nav>
   )
-} 
+}
