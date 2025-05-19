@@ -3,7 +3,6 @@
 import { Navbar } from "@/components/landing/navbar"
 import { HeroSection } from "./hero-section"
 import { FeaturesSection } from "./features-section"
-import { HowItWorksSection } from "./how-it-works-section"
 import { MultiChainSection } from "./multi-chain-section"
 
 export function LandingPage() {
@@ -12,10 +11,9 @@ export function LandingPage() {
       <Navbar />
       <HeroSection />
       
-      {/* Additional sections from current version */}
+      {/* Only include Features and MultiChain sections */}
       <div className="pt-10 md:pt-16">
         <FeaturesSection />
-        <HowItWorksSection />
         <MultiChainSection />
       </div>
     </div>
