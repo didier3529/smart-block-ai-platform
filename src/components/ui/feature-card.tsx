@@ -81,6 +81,9 @@ export function FeatureCard({ title, description, icon, delay, variant = "primar
           <div className="absolute -right-20 -bottom-20 w-60 h-60 opacity-[0.03] rotate-45 blur-3xl">
             <div className={`w-full h-full bg-gradient-to-r ${getTextGradientClass()}`}></div>
           </div>
+          
+          {/* Additional subtle glow effect */}
+          <div className="absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-blue-900/10 rounded-xl"></div>
 
           <CardHeader className="relative z-10 pb-4 pt-7 px-7">
             <div
@@ -106,8 +109,11 @@ export function FeatureCard({ title, description, icon, delay, variant = "primar
           <CardContent className="relative z-10 px-7 pt-0 pb-7">
             <p className="text-gray-300 leading-relaxed text-base">{description}</p>
           </CardContent>
+          
+          {/* Add subtle bottom glow effect */}
+          <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-blue-500/30 to-transparent"></div>
         </Card>
       </BorderGlow>
     </div>
   )
-} 
+}

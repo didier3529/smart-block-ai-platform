@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { Menu, X, ChevronDown, Zap, TrendingUp, Code, ImageIcon, Layers, Brain } from "lucide-react"
@@ -15,8 +15,11 @@ export function Navbar() {
   const [isOpen, setIsOpen] = useState(false)
   const [isScrolled, setIsScrolled] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  
+  // Full page menu states
   const [featuresMenuOpen, setFeaturesMenuOpen] = useState(false)
   const [aboutMenuOpen, setAboutMenuOpen] = useState(false)
+  
   const router = useRouter()
   const { connectWallet, isAuthenticated } = useAuth()
 
@@ -78,6 +81,22 @@ export function Navbar() {
     setAboutMenuOpen(false)
   }
 
+  // Features dropdown items
+  const featuresItems = [
+    { label: "Real-time Analytics", href: "#analytics" },
+    { label: "Smart Contracts Audit", href: "#audit" },
+    { label: "AI Predictions", href: "#predictions" },
+    { label: "Market Insights", href: "#insights" },
+  ]
+  
+  // About dropdown items
+  const aboutItems = [
+    { label: "Our Team", href: "/about#team" },
+    { label: "Vision", href: "/about#vision" },
+    { label: "Roadmap", href: "/about#roadmap" },
+    { label: "Partners", href: "/about#partners" },
+  ]
+
   return (
     <>
       <nav
@@ -129,209 +148,131 @@ export function Navbar() {
               </Button>
             </div>
 
-            {/* Mobile Navigation Toggle */}
-            <button className="md:hidden text-white" onClick={() => setIsOpen(!isOpen)} aria-label="Toggle menu">
-              {isOpen ? <X size={24} /> : <Menu size={24} />}
-            </button>
+            {/* Mobile Menu Button */}
+            <div className="md:hidden">
+              <Button 
+                variant="ghost" 
+                className="text-white hover:bg-transparent"
+                onClick={() => setIsOpen(!isOpen)}
+              >
+                <Menu className="h-8 w-8" />
+              </Button>
+            </div>
+          </div>
+        </div>
+      </nav>
+
+      {/* Full Page Features Menu */}
+      <FullPageMenu 
+        isOpen={featuresMenuOpen} 
+        onClose={closeFeaturesMenu}
+        title="Platform Features"
+        subtitle="Discover the tools to enhance your blockchain experience"
+      >
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 py-12">
+          {/* Feature Cards */}
+          <div className="bg-black/30 rounded-xl p-6 hover:bg-black/50 transition-all duration-300 border border-purple-500/20 hover:border-purple-500/40 group">
+            <div className="w-14 h-14 bg-gradient-to-br from-purple-500 to-blue-600 rounded-lg flex items-center justify-center mb-4">
+              <TrendingUp className="h-7 w-7 text-white" />
+            </div>
+            <h3 className="text-xl font-semibold mb-2 text-white group-hover:text-purple-400 transition-colors">Real-time Analytics</h3>
+            <p className="text-gray-300">Track and analyze blockchain data with powerful real-time visualizations.</p>
           </div>
 
-          {/* Mobile Navigation Menu */}
-          {isOpen && (
-            <div className="md:hidden pt-4 pb-6 space-y-4">
-              <div className="flex flex-col space-y-4">
-                <Button
-                  variant="ghost"
-                  className="text-white flex items-center justify-between w-full text-lg font-medium hover:text-purple-400 hover:bg-transparent transition-colors group"
-                  onClick={toggleFeaturesMenu}
-                >
-                  <span className="group-hover:text-purple-400 transition-all duration-300">Features</span>
-                  <ChevronDown className={`h-5 w-5 text-purple-400 transition-transform duration-300 ${featuresMenuOpen ? 'rotate-180' : ''}`} />
-                </Button>
+          <div className="bg-black/30 rounded-xl p-6 hover:bg-black/50 transition-all duration-300 border border-purple-500/20 hover:border-purple-500/40 group">
+            <div className="w-14 h-14 bg-gradient-to-br from-purple-500 to-blue-600 rounded-lg flex items-center justify-center mb-4">
+              <Code className="h-7 w-7 text-white" />
+            </div>
+            <h3 className="text-xl font-semibold mb-2 text-white group-hover:text-purple-400 transition-colors">Smart Contracts Audit</h3>
+            <p className="text-gray-300">Verify and analyze smart contracts for security vulnerabilities.</p>
+          </div>
 
-                <Button
-                  variant="ghost"
-                  className="text-white flex items-center justify-between w-full text-lg font-medium hover:text-purple-400 hover:bg-transparent transition-colors group"
-                  onClick={toggleAboutMenu}
-                >
-                  <span className="group-hover:text-purple-400 transition-all duration-300">About</span>
-                  <ChevronDown className={`h-5 w-5 text-purple-400 transition-transform duration-300 ${aboutMenuOpen ? 'rotate-180' : ''}`} />
-                </Button>
-              </div>
+          <div className="bg-black/30 rounded-xl p-6 hover:bg-black/50 transition-all duration-300 border border-purple-500/20 hover:border-purple-500/40 group">
+            <div className="w-14 h-14 bg-gradient-to-br from-purple-500 to-blue-600 rounded-lg flex items-center justify-center mb-4">
+              <Brain className="h-7 w-7 text-white" />
+            </div>
+            <h3 className="text-xl font-semibold mb-2 text-white group-hover:text-purple-400 transition-colors">AI Predictions</h3>
+            <p className="text-gray-300">Leverage AI-driven tools to forecast market trends and opportunities.</p>
+          </div>
 
+          <div className="bg-black/30 rounded-xl p-6 hover:bg-black/50 transition-all duration-300 border border-purple-500/20 hover:border-purple-500/40 group">
+            <div className="w-14 h-14 bg-gradient-to-br from-purple-500 to-blue-600 rounded-lg flex items-center justify-center mb-4">
+              <Zap className="h-7 w-7 text-white" />
+            </div>
+            <h3 className="text-xl font-semibold mb-2 text-white group-hover:text-purple-400 transition-colors">Market Insights</h3>
+            <p className="text-gray-300">Access deep market analysis and insights based on blockchain data.</p>
+          </div>
+        </div>
+      </FullPageMenu>
+
+      {/* Full Page About Menu */}
+      <FullPageMenu 
+        isOpen={aboutMenuOpen} 
+        onClose={closeAboutMenu}
+        title="About Us"
+        subtitle="Learn more about our mission and vision"
+        centerContent={true}
+      >
+        <div className="max-w-3xl mx-auto grid gap-12 py-12">
+          <div className="text-center">
+            <h3 className="text-2xl font-bold mb-4 text-white">Our Team</h3>
+            <p className="text-gray-300 text-lg">A passionate group of blockchain experts and developers dedicated to making crypto accessible.</p>
+          </div>
+
+          <div className="text-center">
+            <h3 className="text-2xl font-bold mb-4 text-white">Vision</h3>
+            <p className="text-gray-300 text-lg">To create a seamless and intuitive platform that bridges the gap between complex blockchain technology and everyday users.</p>
+          </div>
+
+          <div className="text-center">
+            <h3 className="text-2xl font-bold mb-4 text-white">Roadmap</h3>
+            <p className="text-gray-300 text-lg">Our strategic plan for continuous development and innovation in the blockchain space.</p>
+          </div>
+
+          <div className="text-center">
+            <h3 className="text-2xl font-bold mb-4 text-white">Partners</h3>
+            <p className="text-gray-300 text-lg">Collaborating with leading blockchain networks and financial institutions to provide comprehensive solutions.</p>
+          </div>
+        </div>
+      </FullPageMenu>
+
+      {/* Mobile Menu */}
+      {isOpen && (
+        <div className="md:hidden fixed inset-0 bg-black/95 backdrop-blur-lg z-40 pt-20">
+          <div className="container mx-auto px-6 py-8 flex flex-col space-y-8 text-center">
+            <Button
+              variant="ghost"
+              onClick={toggleFeaturesMenu}
+              className="text-white py-4 text-xl font-medium hover:text-purple-400 hover:bg-transparent transition-colors"
+            >
+              Features
+            </Button>
+            <Button
+              variant="ghost"
+              onClick={toggleAboutMenu}
+              className="text-white py-4 text-xl font-medium hover:text-purple-400 hover:bg-transparent transition-colors"
+            >
+              About
+            </Button>
+            <div className="pt-4">
               <Button
-                onClick={async () => {
-                  setIsOpen(false)
-                  await handleConnectWallet()
-                }}
+                onClick={handleConnectWallet}
                 disabled={isLoading}
-                className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-full py-6 text-lg font-medium"
+                className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-full px-10 py-7 text-xl w-full"
               >
                 {isLoading ? "Loading..." : isAuthenticated ? "Dashboard" : "Connect Wallet"}
               </Button>
             </div>
-          )}
+          </div>
+          <Button
+            variant="ghost"
+            className="absolute top-4 right-4 text-white hover:bg-transparent"
+            onClick={() => setIsOpen(false)}
+          >
+            <X className="h-8 w-8" />
+          </Button>
         </div>
-      </nav>
-
-      {/* Full-page Features Menu */}
-      <FullPageMenu isOpen={featuresMenuOpen} onClose={closeFeaturesMenu} title="Features">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6 mt-4">
-          <div 
-            onClick={() => {
-              closeFeaturesMenu();
-              router.push('/dashboard/portfolio');
-            }}
-            className="group bg-[#181830] rounded-xl p-5 hover:bg-[#1c1c3a] transition-all duration-300 hover:shadow-lg cursor-pointer"
-          >
-            <div className="flex items-center gap-4 mb-3">
-              <div className="p-3 rounded-xl bg-purple-500/10 text-purple-400">
-                <Zap size={24} />
-              </div>
-              <h3 className="font-semibold text-purple-400 text-xl">
-                Portfolio Analyst
-              </h3>
-            </div>
-            <p className="text-base text-gray-300">
-              Deep insights and optimization for your crypto portfolio
-            </p>
-          </div>
-
-          <div 
-            onClick={() => {
-              closeFeaturesMenu();
-              router.push('/dashboard/market');
-            }}
-            className="group bg-[#181830] rounded-xl p-5 hover:bg-[#1c1c3a] transition-all duration-300 hover:shadow-lg cursor-pointer"
-          >
-            <div className="flex items-center gap-4 mb-3">
-              <div className="p-3 rounded-xl bg-blue-500/10 text-blue-400">
-                <TrendingUp size={24} />
-              </div>
-              <h3 className="font-semibold text-blue-400 text-xl">
-                Trend Spotter
-              </h3>
-            </div>
-            <p className="text-base text-gray-300">
-              Early detection of market opportunities and patterns
-            </p>
-          </div>
-
-          <div 
-            onClick={() => {
-              closeFeaturesMenu();
-              router.push('/dashboard/contracts');
-            }}
-            className="group bg-[#181830] rounded-xl p-5 hover:bg-[#1c1c3a] transition-all duration-300 hover:shadow-lg cursor-pointer"
-          >
-            <div className="flex items-center gap-4 mb-3">
-              <div className="p-3 rounded-xl bg-teal-500/10 text-teal-400">
-                <Code size={24} />
-              </div>
-              <h3 className="font-semibold text-teal-400 text-xl">
-                Smart Contract Analyzer
-              </h3>
-            </div>
-            <p className="text-base text-gray-300">
-              Security analysis and optimization for smart contracts
-            </p>
-          </div>
-
-          <div 
-            onClick={() => {
-              closeFeaturesMenu();
-              router.push('/dashboard/nfts');
-            }}
-            className="group bg-[#181830] rounded-xl p-5 hover:bg-[#1c1c3a] transition-all duration-300 hover:shadow-lg cursor-pointer"
-          >
-            <div className="flex items-center gap-4 mb-3">
-              <div className="p-3 rounded-xl bg-emerald-500/10 text-emerald-400">
-                <ImageIcon size={24} />
-              </div>
-              <h3 className="font-semibold text-emerald-400 text-xl">
-                NFT Analytics
-              </h3>
-            </div>
-            <p className="text-base text-gray-300">
-              Valuation and trends for your NFT collections
-            </p>
-          </div>
-
-          <div 
-            onClick={() => {
-              closeFeaturesMenu();
-              router.push('/dashboard/settings');
-            }}
-            className="group bg-[#181830] rounded-xl p-5 hover:bg-[#1c1c3a] transition-all duration-300 hover:shadow-lg cursor-pointer"
-          >
-            <div className="flex items-center gap-4 mb-3">
-              <div className="p-3 rounded-xl bg-pink-500/10 text-pink-400">
-                <Layers size={24} />
-              </div>
-              <h3 className="font-semibold text-pink-400 text-xl">
-                Multi-chain Support
-              </h3>
-            </div>
-            <p className="text-base text-gray-300">
-              Unified analysis across multiple blockchain networks
-            </p>
-          </div>
-
-          <div 
-            onClick={() => {
-              closeFeaturesMenu();
-              router.push('/dashboard/ai');
-            }}
-            className="group bg-[#181830] rounded-xl p-5 hover:bg-[#1c1c3a] transition-all duration-300 hover:shadow-lg cursor-pointer"
-          >
-            <div className="flex items-center gap-4 mb-3">
-              <div className="p-3 rounded-xl bg-blue-500/10 text-blue-400">
-                <Brain size={24} />
-              </div>
-              <h3 className="font-semibold text-blue-400 text-xl">
-                AI-Powered Intelligence
-              </h3>
-            </div>
-            <p className="text-base text-gray-300">
-              Specialized AI agents providing predictive insights
-            </p>
-          </div>
-        </div>
-      </FullPageMenu>
-
-      {/* Full-page About Menu */}
-      <FullPageMenu isOpen={aboutMenuOpen} onClose={closeAboutMenu} title="About">
-        <div className="space-y-6 max-w-3xl mx-auto text-center">
-          <p className="text-xl md:text-2xl text-gray-200 mb-8 leading-relaxed">
-            <span className="text-purple-400 font-semibold">Smart Block AI</span> is an AI-powered blockchain
-            analytics platform providing intelligence across multiple blockchains to help you make smarter investment decisions.
-          </p>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-10">
-            <div className="bg-[#181830] rounded-xl p-6 hover:bg-[#1c1c3a] transition-all duration-300 hover:shadow-lg text-center">
-              <h3 className="font-medium text-purple-400 text-xl mb-3">Our Mission</h3>
-              <p className="text-lg text-gray-300">Democratize blockchain analytics with AI-driven insights, making complex data accessible to everyone.</p>
-            </div>
-
-            <div className="bg-[#181830] rounded-xl p-6 hover:bg-[#1c1c3a] transition-all duration-300 hover:shadow-lg text-center">
-              <h3 className="font-medium text-purple-400 text-xl mb-3">Our Vision</h3>
-              <p className="text-lg text-gray-300">Lead the future of blockchain intelligence by combining artificial intelligence with blockchain data.</p>
-            </div>
-          </div>
-          
-          <div className="flex flex-col items-center justify-center mt-12 space-y-6">
-            <h3 className="text-2xl font-semibold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-400 text-center">Ready to elevate your blockchain experience?</h3>
-            <Button 
-              onClick={() => {
-                closeAboutMenu();
-                handleConnectWallet();
-              }}
-              className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-full px-12 py-6 text-xl font-medium"
-            >
-              {isLoading ? "Loading..." : isAuthenticated ? "Go to Dashboard" : "Connect Wallet"}
-            </Button>
-          </div>
-        </div>
-      </FullPageMenu>
+      )}
     </>
   )
-} 
+}
