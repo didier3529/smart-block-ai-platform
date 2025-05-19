@@ -1,6 +1,6 @@
 "use client"
 
-import { ThemeProvider } from "@/components/providers/theme-provider"
+import { ThemeProvider } from "@/components/theme-provider"
 import "./globals.css"
 import { RootProvider } from "@/lib/providers/root-provider"
 
