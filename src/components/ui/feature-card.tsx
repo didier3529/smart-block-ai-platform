@@ -51,31 +51,38 @@ export function FeatureCard({ title, description, icon, delay, variant = "primar
       <BorderGlow
         glowColor={getGlowColor()}
         className={cn(
-          "transition-all duration-500 hover:-translate-y-2",
+          "transition-all duration-500 hover:-translate-y-2 h-full",
           isInView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10",
           className,
         )}
         style={{ transitionDelay: `${delay}ms` }}
       >
-        <Card className="bg-black/40 border-0 relative overflow-hidden h-full">
-          {/* Add subtle geometric shape in background */}
-          <div className="absolute -right-10 -bottom-10 w-40 h-40 opacity-10 rotate-45 blur-sm">
+        <Card className="bg-black/40 border-0 relative overflow-hidden h-full flex flex-col">
+          {/* Enhanced background effects */}
+          <div className="absolute -right-20 -bottom-20 w-60 h-60 opacity-10 rotate-45 blur-xl">
             <div className={`w-full h-full gradient-${variant === "primary" ? "phantom" : variant}`}></div>
           </div>
+          
+          {/* Additional subtle glow effect */}
+          <div className="absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-blue-900/10 rounded-xl"></div>
 
-          <CardHeader>
+          <CardHeader className="pb-2">
             <div
-              className={`w-14 h-14 rounded-md gradient-${variant === "primary" ? "phantom" : variant} flex items-center justify-center mb-4 transition-transform duration-500 hover:scale-110 animate-pulse-glow`}
+              className={`w-16 h-16 rounded-lg gradient-${variant === "primary" ? "phantom" : variant} flex items-center justify-center mb-6 transition-transform duration-500 hover:scale-110 shadow-lg shadow-${variant}-500/20`}
             >
               {icon}
             </div>
-            <CardTitle className={`text-xl font-semibold ${getTextGradientClass()}`}>{title}</CardTitle>
+            <CardTitle className={`text-2xl font-semibold ${getTextGradientClass()} mb-2`}>{title}</CardTitle>
           </CardHeader>
-          <CardContent>
-            <p className="text-gray-300">{description}</p>
+          
+          <CardContent className="flex-grow">
+            <p className="text-gray-300 text-base leading-relaxed">{description}</p>
           </CardContent>
+          
+          {/* Add subtle bottom glow effect */}
+          <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-blue-500/30 to-transparent"></div>
         </Card>
       </BorderGlow>
     </div>
   )
-} 
+}
