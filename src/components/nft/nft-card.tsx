@@ -1,86 +1,152 @@
-import React from 'react';
-import Image from 'next/image';
-import { NFT } from '@/lib/types/nft-types';
-import { Button } from '@/components/ui/button'; // Assuming you have a Button component
-import { Tag } from '@/components/ui/tag'; // Assuming a Tag component for chain/status
-import { cn } from '@/lib/utils'; // Assuming a utility for class names
+import { useState } from 'react'
+import { Card, CardHeader, CardContent, CardActions, CardMedia, Typography, Button, Chip, Box, Avatar, IconButton } from '@mui/material'
+import Link from 'next/link'
+import { NFT } from '@/lib/types/nft-types'
+import FavoriteIcon from '@mui/icons-material/Favorite'
+import ShareIcon from '@mui/icons-material/Share'
+import { formatCurrency } from '@/lib/utils/format-utils'
+import VerifiedIcon from '@mui/icons-material/Verified'
 
 interface NFTCardProps {
   nft: NFT;
-  className?: string;
-  onViewDetails?: (nft: NFT) => void; // Optional handler for when details are requested
+  compact?: boolean;
+  showActions?: boolean;
+  showPrice?: boolean;
 }
 
-export const NFTCard: React.FC<NFTCardProps> = ({ nft, className, onViewDetails }) => {
-  const displayImage = nft.imageUrl || nft.metadata?.image || 'https://via.placeholder.com/300?text=No+Image';
-  const displayName = nft.name || nft.metadata?.name || `Token #${nft.tokenId}`;
-
-  const handleViewDetails = () => {
-    if (onViewDetails) {
-      onViewDetails(nft);
-    }
-    // If no handler, could navigate or do something else by default
-    // console.log('View details for:', nft.tokenId);
-  };
-
-  return (
-    <div
-      className={cn(
-        'data-card rounded-xl border bg-card text-card-foreground shadow-sm overflow-hidden transition-all hover:shadow-lg',
-        'flex flex-col', // Ensure content inside flexes column-wise
-        className
-      )}
-    >
-      <div className='relative aspect-square w-full overflow-hidden'>
-        <Image 
-          src={displayImage} 
-          alt={displayName} 
-          fill
-          sizes='(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw'
-          className='object-cover transition-transform duration-300 ease-in-out group-hover:scale-105' 
+export function NFTCard({ nft, compact = false, showActions = true, showPrice = true }: NFTCardProps) {
+  const [liked, setLiked] = useState(false)
+  
+  // Handle null or undefined nft.metadata
+  const metadata = nft.metadata || {}
+  const name = metadata.name || nft.name || `#${nft.token_id}`
+  const image = nft.image_url || metadata.image || '/images/nft-placeholder.png'
+  const collectionName = nft.collection?.name || 'Collection'
+  
+  // Format NFT price if available
+  const price = nft.price ? formatCurrency(parseFloat(nft.price.amount), nft.price.currency_symbol) : null
+  
+  // For compact cards
+  if (compact) {
+    return (
+      <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+        <CardMedia
+          component="img"
+          height={160}
+          image={image}
+          alt={name}
+          sx={{ objectFit: 'cover' }}
         />
-        {nft.chain && (
-          <Tag 
-            variant="chain" 
-            className='absolute top-2 right-2'
-          >
-            {nft.chain.toUpperCase()}
-          </Tag>
+        <CardContent sx={{ flexGrow: 1, pt: 1, pb: 1, "&:last-child": { pb: 1 } }}>
+          <Typography variant="subtitle2" noWrap>
+            {name}
+          </Typography>
+          {showPrice && price && (
+            <Typography variant="body2" color="text.secondary">
+              {price} {nft.price?.currency_symbol}
+            </Typography>
+          )}
+        </CardContent>
+      </Card>
+    )
+  }
+  
+  // Standard card with more details
+  return (
+    <Card sx={{ 
+      height: '100%', 
+      display: 'flex', 
+      flexDirection: 'column',
+      transition: 'transform 0.2s ease-in-out',
+      '&:hover': {
+        transform: 'translateY(-4px)',
+        boxShadow: 6
+      }
+    }}>
+      <CardMedia
+        component="img"
+        height={260}
+        image={image}
+        alt={name}
+        sx={{ objectFit: 'cover' }}
+      />
+      
+      <CardHeader
+        avatar={
+          <Avatar 
+            aria-label={collectionName}
+            src={nft.collection?.image || ''}
+            alt={collectionName}
+          />
+        }
+        title={
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            {name}
+            {nft.collection?.verified && (
+              <VerifiedIcon color="primary" fontSize="small" sx={{ ml: 0.5 }} />
+            )}
+          </Box>
+        }
+        subheader={collectionName}
+        sx={{ pb: 0 }}
+      />
+      
+      <CardContent sx={{ flexGrow: 1, pt: 1, pb: 1 }}>
+        {showPrice && (
+          <Box sx={{ mb: 1 }}>
+            {price ? (
+              <Chip 
+                label={`${price} ${nft.price?.currency_symbol}`}
+                color="primary"
+                size="small"
+                sx={{ mr: 1 }}
+              />
+            ) : (
+              <Chip 
+                label="Not for sale"
+                variant="outlined"
+                size="small"
+                sx={{ mr: 1 }}
+              />
+            )}
+          </Box>
         )}
-      </div>
-
-      <div className='p-4 flex flex-col flex-grow'> {/* Added flex-grow here */}
-        <h3 className='text-lg font-semibold leading-tight truncate mb-1' title={displayName}>
-          {displayName}
-        </h3>
         
-        {/* Collection Name - Assuming it might come from a parent or be resolved differently */}
-        {/* <p className='text-sm text-muted-foreground truncate mb-2'>Collection Name</p> */}
-
-        <div className='mt-auto'> {/* Pushes content below to the bottom */}
-          {nft.isListed && nft.listingPrice && nft.listingCurrency && (
-            <div className='mb-3'>
-              <p className='text-xs text-muted-foreground'>Price</p>
-              <p className='text-xl font-bold text-primary'>
-                {nft.listingPrice} {nft.listingCurrency}
-              </p>
-            </div>
-          )}
-          {!nft.isListed && (
-            <div className='mb-3'>
-              <p className='text-sm font-semibold text-muted-foreground'>Not Listed</p>
-            </div>
-          )}
-
-          <Button 
-            variant='outline' 
-            className='w-full' 
-            onClick={handleViewDetails}
+        {/* Truncate description to keep cards compact */}
+        {metadata.description && (
+          <Typography variant="body2" color="text.secondary" sx={{ 
+            display: '-webkit-box', 
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: 'vertical',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            height: 40
+          }}>
+            {metadata.description}
+          </Typography>
+        )}
+      </CardContent>
+      
+      {showActions && (
+        <CardActions disableSpacing>
+          <IconButton 
+            aria-label="add to favorites" 
+            onClick={() => setLiked(!liked)}
+            color={liked ? 'primary' : 'default'}
           >
-            View Details
-          </Button>
-        </div>
-      </div>
-    </div>
-  );
-}; 
+            <FavoriteIcon />
+          </IconButton>
+          <IconButton aria-label="share">
+            <ShareIcon />
+          </IconButton>
+          <Box sx={{ flexGrow: 1 }} />
+          <Link href={`/nft/${nft.token_address}/${nft.token_id}`} passHref>
+            <Button size="small" color="primary">
+              View
+            </Button>
+          </Link>
+        </CardActions>
+      )}
+    </Card>
+  )
+}

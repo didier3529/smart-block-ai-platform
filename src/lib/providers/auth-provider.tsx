@@ -64,7 +64,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const verifyInterval = useRef<NodeJS.Timeout>();
 
   // Debug logging
-  const logDebug = useCallback((message: string, data?: any) => {
+  const logDebug = useCallback((message: string, data?: Record<string, unknown> | Error | null) => {
     if (process.env.NODE_ENV === 'development') {
       console.log(`[Auth] ${message}`, data ? data : '');
     }

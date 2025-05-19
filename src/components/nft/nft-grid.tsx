@@ -1,73 +1,107 @@
-import React from 'react';
-import { NFT } from '@/lib/types/nft-types';
-import { NFTCard } from './nft-card';
-import { Skeleton } from '@/components/ui/skeleton'; // Assuming a Skeleton component for loading
-import { cn } from '@/lib/utils';
+import React from 'react'
+import { Grid, Box, CircularProgress, Typography, Skeleton } from '@mui/material'
+import { NFTCard } from './nft-card'
+import { NFT } from '@/lib/types/nft-types'
+import Image from 'next/image'
 
 interface NFTGridProps {
-  nfts?: NFT[];
-  isLoading?: boolean;
-  error?: Error | null;
-  onViewNftDetails?: (nft: NFT) => void;
-  className?: string;
-  gridClassName?: string; // For styling the grid itself
-  emptyStateMessage?: string;
-  skeletonCount?: number; // Number of skeletons to show while loading
+  nfts: NFT[];
+  loading?: boolean;
+  emptyMessage?: string;
+  compact?: boolean;
+  error?: string | null;
 }
 
-export const NFTGrid: React.FC<NFTGridProps> = ({
-  nfts,
-  isLoading = false,
-  error = null,
-  onViewNftDetails,
-  className,
-  gridClassName = 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6',
-  emptyStateMessage = 'No NFTs found.',
-  skeletonCount = 10, // Default to 10 skeletons for a decent loading view
-}) => {
+export function NFTGrid({ 
+  nfts, 
+  loading = false, 
+  emptyMessage = "No NFTs found",
+  compact = false,
+  error = null
+}: NFTGridProps) {
+  // Skeleton placeholders during loading
+  if (loading) {
+    return (
+      <Grid container spacing={3}>
+        {Array.from(new Array(8)).map((_, index) => (
+          <Grid item xs={12} sm={6} md={4} lg={3} key={`skeleton-${index}`}>
+            <Box sx={{ width: '100%', height: compact ? 220 : 400 }}>
+              <Skeleton variant="rectangular" height={compact ? 160 : 260} animation="wave" />
+              <Box sx={{ pt: 1 }}>
+                <Skeleton animation="wave" height={28} width="80%" />
+                <Skeleton animation="wave" height={18} width="40%" />
+              </Box>
+            </Box>
+          </Grid>
+        ))}
+      </Grid>
+    )
+  }
+  
+  // Error message display
   if (error) {
     return (
-      <div className={cn('flex flex-col items-center justify-center text-destructive p-8 data-card', className)}>
-        <p className='text-lg font-semibold mb-2'>Error loading NFTs</p>
-        <p className='text-sm'>{error.message || 'An unexpected error occurred.'}</p>
-      </div>
-    );
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          p: 4,
+          textAlign: 'center'
+        }}
+      >
+        <Typography variant="h6" color="error" gutterBottom>
+          {error}
+        </Typography>
+        <Typography variant="body2" color="text.secondary">
+          Please try again later or contact support if the problem persists.
+        </Typography>
+      </Box>
+    )
   }
-
-  if (isLoading) {
-    return (
-      <div className={cn(gridClassName, className)}>
-        {Array.from({ length: skeletonCount }).map((_, index) => (
-          <div key={index} className='data-card rounded-xl border bg-card shadow-sm overflow-hidden flex flex-col'>
-            <Skeleton className='aspect-square w-full' />
-            <div className='p-4 space-y-2'>
-              <Skeleton className='h-5 w-3/4' />
-              <Skeleton className='h-8 w-1/2' />
-              <Skeleton className='h-10 w-full mt-2' />
-            </div>
-          </div>
-        ))}
-      </div>
-    );
-  }
-
+  
+  // Empty state message
   if (!nfts || nfts.length === 0) {
     return (
-      <div className={cn('flex flex-col items-center justify-center text-muted-foreground p-8 data-card', className)}>
-        <p className='text-lg'>{emptyStateMessage}</p>
-      </div>
-    );
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          p: 6,
+          textAlign: 'center'
+        }}
+      >
+        <Box sx={{ mb: 2, opacity: 0.6 }}>
+          <Image 
+            src="/images/empty-nft.svg" 
+            alt="No NFTs found" 
+            width={120} 
+            height={120} 
+          />
+        </Box>
+        <Typography variant="h6" color="text.secondary" gutterBottom>
+          {emptyMessage}
+        </Typography>
+      </Box>
+    )
   }
-
+  
+  // Display NFT grid
   return (
-    <div className={cn(gridClassName, className)}>
+    <Grid container spacing={3}>
       {nfts.map((nft) => (
-        <NFTCard 
-          key={`${nft.contractAddress}-${nft.tokenId}`} 
-          nft={nft} 
-          onViewDetails={onViewNftDetails} 
-        />
+        <Grid item xs={12} sm={6} md={4} lg={3} key={`${nft.token_address}-${nft.token_id}`}>
+          <NFTCard 
+            nft={nft} 
+            compact={compact} 
+            showActions={!compact}
+            showPrice={true}
+          />
+        </Grid>
       ))}
-    </div>
-  );
-}; 
+    </Grid>
+  )
+}

@@ -102,4 +102,4 @@ export const NFTAnalytics: React.FC = () => {
       </div>
     </PageLayout>
   );
-}; 
+};

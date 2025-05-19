@@ -1,29 +1,26 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import {
-  Container,
-  Grid,
-  Typography,
-  Box,
-  Card,
-  CardMedia,
-  CardContent,
-  Skeleton,
-  Paper,
-  Divider,
-  Chip,
-  Stack,
-  Link as MuiLink,
-  Button
-} from '@mui/material';
-import { NFTItem } from '@/lib/types/nft-types';
+import { NFTItem, NFTAttribute } from '@/lib/types/nft-types';
 import { nftService } from '@/lib/services/nft-service';
 import { shortenAddress } from '@/lib/utils/address-utils';
 import { formatDate } from '@/lib/utils/format-utils';
-import LaunchIcon from '@mui/icons-material/Launch';
 import Link from 'next/link';
-import { useTheme } from '@mui/material/styles';
+import Image from 'next/image';
+import { 
+  Card, 
+  CardContent, 
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardFooter
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
+import { Icons } from "@/components/ui/icons";
+import { ExternalLinkIcon } from "lucide-react";
 
 interface NFTItemViewProps {
   collectionAddress: string;
@@ -34,7 +31,6 @@ export default function NFTItemView({ collectionAddress, tokenId }: NFTItemViewP
   const [nft, setNft] = useState<NFTItem | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const theme = useTheme();
 
   useEffect(() => {
     const fetchNFTData = async () => {
@@ -62,226 +58,183 @@ export default function NFTItemView({ collectionAddress, tokenId }: NFTItemViewP
   }, [collectionAddress, tokenId]);
 
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
+    <div className="container mx-auto px-4 py-8">
       {error ? (
-        <Box sx={{ my: 2, p: 2, bgcolor: 'error.main', color: 'white', borderRadius: 1 }}>
+        <div className="my-4 p-4 bg-red-500 text-white rounded">
           {error}
-        </Box>
+        </div>
       ) : loading ? (
-        <Grid container spacing={4}>
-          <Grid item xs={12} md={6}>
-            <Skeleton variant="rectangular" height={400} animation="wave" />
-          </Grid>
-          <Grid item xs={12} md={6}>
-            <Skeleton variant="text" height={40} width="80%" />
-            <Skeleton variant="text" height={30} width="60%" />
-            <Skeleton variant="text" height={20} width="40%" sx={{ mb: 2 }} />
-            <Skeleton variant="rectangular" height={100} sx={{ mb: 2 }} />
-            <Stack direction="row" spacing={1} sx={{ mb: 2 }}>
-              <Skeleton variant="rectangular" width={100} height={32} />
-              <Skeleton variant="rectangular" width={100} height={32} />
-            </Stack>
-            <Skeleton variant="text" height={20} width="90%" />
-            <Skeleton variant="text" height={20} width="70%" />
-          </Grid>
-        </Grid>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <Skeleton className="aspect-square w-full rounded-lg" />
+          <div>
+            <Skeleton className="h-8 w-4/5 mb-2" />
+            <Skeleton className="h-6 w-3/5 mb-1" />
+            <Skeleton className="h-4 w-2/5 mb-4" />
+            <Skeleton className="h-24 w-full mb-4" />
+            <div className="flex space-x-2 mb-4">
+              <Skeleton className="h-10 w-32" />
+              <Skeleton className="h-10 w-32" />
+            </div>
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-4/5 mt-1" />
+          </div>
+        </div>
       ) : nft ? (
-        <Grid container spacing={4}>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {/* NFT Image */}
-          <Grid item xs={12} md={6}>
-            <Paper 
-              elevation={3} 
-              sx={{ 
-                borderRadius: 2, 
-                overflow: 'hidden',
-                maxHeight: '600px',
-                display: 'flex',
-                justifyContent: 'center',
-                alignItems: 'center'
-              }}
-            >
-              <Box component="img"
+          <Card className="overflow-hidden">
+            <div className="relative aspect-square w-full">
+              <Image
                 src={nftService.getNFTImageUrl(nft) || '/images/nft-placeholder.png'}
                 alt={nft.normalized_metadata?.name || `NFT #${nft.token_id}`}
-                sx={{ 
-                  width: '100%',
-                  height: '100%',
-                  objectFit: 'contain',
-                  maxHeight: '600px'
-                }}
+                fill
+                className="object-contain"
+                priority
               />
-            </Paper>
-          </Grid>
+            </div>
+          </Card>
 
           {/* NFT Details */}
-          <Grid item xs={12} md={6}>
-            <Box>
-              {/* Collection link */}
-              <Link href={`/nft/collection/${nft.token_address}`} passHref style={{ textDecoration: 'none' }}>
-                <Typography 
-                  variant="subtitle1" 
-                  color="primary" 
-                  component="div" 
-                  sx={{ 
-                    cursor: 'pointer',
-                    '&:hover': { textDecoration: 'underline' } 
-                  }}
-                >
-                  {nft.name || 'Collection'}
-                </Typography>
-              </Link>
-              
-              {/* NFT Name */}
-              <Typography variant="h4" component="h1" fontWeight="bold" gutterBottom>
-                {nft.normalized_metadata?.name || `#${nft.token_id}`}
-              </Typography>
-              
-              {/* Token ID & Contract */}
-              <Typography variant="body2" color="text.secondary" gutterBottom>
-                Token ID: {nft.token_id}
-              </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-                Contract: {shortenAddress(nft.token_address || '')}
-              </Typography>
-              
-              {/* Description */}
-              {nft.normalized_metadata?.description && (
-                <Paper 
-                  elevation={1} 
-                  sx={{ p: 2, mb: 3, borderRadius: 2, bgcolor: 'background.paper' }}
-                >
-                  <Typography variant="body1">
+          <div>
+            {/* Collection link */}
+            <Link href={`/nft/collection/${nft.token_address}`} className="text-primary hover:underline">
+              {nft.name || 'Collection'}
+            </Link>
+            
+            {/* NFT Name */}
+            <h1 className="text-2xl font-bold mt-1 mb-1">
+              {nft.normalized_metadata?.name || `#${nft.token_id}`}
+            </h1>
+            
+            {/* Token ID & Contract */}
+            <p className="text-sm text-muted-foreground">
+              Token ID: {nft.token_id}
+            </p>
+            <p className="text-sm text-muted-foreground mb-6">
+              Contract: {shortenAddress(nft.token_address || '')}
+            </p>
+            
+            {/* Description */}
+            {nft.normalized_metadata?.description && (
+              <Card className="mb-6">
+                <CardContent className="p-4">
+                  <p>
                     {nft.normalized_metadata.description}
-                  </Typography>
-                </Paper>
-              )}
-              
-              {/* Owner */}
-              {nft.owner_of && (
-                <Box sx={{ mb: 3 }}>
-                  <Typography variant="subtitle2" color="text.secondary">
-                    Owner
-                  </Typography>
-                  <Typography variant="body1">
-                    {shortenAddress(nft.owner_of)}
-                  </Typography>
-                </Box>
-              )}
-              
-              {/* External Links */}
-              <Box sx={{ mb: 3 }}>
-                <Stack direction="row" spacing={2}>
-                  <Button 
-                    variant="outlined" 
-                    startIcon={<LaunchIcon />}
-                    component={MuiLink}
+                  </p>
+                </CardContent>
+              </Card>
+            )}
+            
+            {/* Owner */}
+            {nft.owner_of && (
+              <div className="mb-6">
+                <h3 className="text-sm text-muted-foreground">
+                  Owner
+                </h3>
+                <p>
+                  {shortenAddress(nft.owner_of)}
+                </p>
+              </div>
+            )}
+            
+            {/* External Links */}
+            <div className="mb-6">
+              <div className="flex flex-wrap gap-3">
+                <Button 
+                  variant="outline" 
+                  className="gap-2"
+                  asChild
+                >
+                  <a 
                     href={`https://opensea.io/assets/ethereum/${nft.token_address}/${nft.token_id}`}
                     target="_blank"
                     rel="noopener noreferrer"
                   >
+                    <ExternalLinkIcon className="h-4 w-4" />
                     View on OpenSea
-                  </Button>
-                  <Button 
-                    variant="outlined" 
-                    startIcon={<LaunchIcon />}
-                    component={MuiLink}
+                  </a>
+                </Button>
+                <Button 
+                  variant="outline" 
+                  className="gap-2"
+                  asChild
+                >
+                  <a 
                     href={`https://etherscan.io/token/${nft.token_address}?a=${nft.token_id}`}
                     target="_blank"
                     rel="noopener noreferrer"
                   >
+                    <ExternalLinkIcon className="h-4 w-4" />
                     View on Etherscan
-                  </Button>
-                </Stack>
-              </Box>
-              
-              {/* Attributes/Traits */}
-              {nft.normalized_metadata?.attributes && (
-                <Box sx={{ mb: 3 }}>
-                  <Typography variant="h6" gutterBottom>
-                    Attributes
-                  </Typography>
-                  <Grid container spacing={1}>
-                    {(nft.normalized_metadata.attributes as any[]).map((attr, index) => (
-                      <Grid item xs={6} sm={4} key={index}>
-                        <Paper 
-                          elevation={1}
-                          sx={{ 
-                            p: 1.5, 
-                            textAlign: 'center',
-                            borderRadius: 2,
-                            height: '100%',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            justifyContent: 'center'
-                          }}
-                        >
-                          <Typography variant="caption" color="text.secondary" noWrap>
-                            {attr.trait_type}
-                          </Typography>
-                          <Typography variant="body2" fontWeight="bold" noWrap>
-                            {attr.value}
-                          </Typography>
-                          {attr.trait_count && (
-                            <Typography variant="caption" color="text.secondary">
-                              {((attr.trait_count / (nft.normalized_metadata?.attributes?.length || 1)) * 100).toFixed(1)}% have this trait
-                            </Typography>
-                          )}
-                        </Paper>
-                      </Grid>
-                    ))}
-                  </Grid>
-                </Box>
-              )}
-              
-              {/* Token Details */}
-              <Box sx={{ mb: 3 }}>
-                <Typography variant="h6" gutterBottom>
-                  Details
-                </Typography>
-                <Stack spacing={1}>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <Typography variant="body2" color="text.secondary">Contract Type</Typography>
-                    <Typography variant="body2">{nft.contract_type || 'ERC721'}</Typography>
-                  </Box>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <Typography variant="body2" color="text.secondary">Token Standard</Typography>
-                    <Typography variant="body2">{nft.contract_type || 'ERC721'}</Typography>
-                  </Box>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <Typography variant="body2" color="text.secondary">Chain</Typography>
-                    <Typography variant="body2">Ethereum</Typography>
-                  </Box>
-                  {nft.last_metadata_sync && (
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <Typography variant="body2" color="text.secondary">Last Updated</Typography>
-                      <Typography variant="body2">{formatDate(new Date(nft.last_metadata_sync))}</Typography>
-                    </Box>
-                  )}
-                  {nft.token_uri && (
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <Typography variant="body2" color="text.secondary">Metadata</Typography>
-                      <MuiLink 
-                        href={nft.token_uri} 
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        sx={{ 
-                          maxWidth: '200px', 
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap',
-                          display: 'block'
-                        }}
-                      >
-                        {nft.token_uri.startsWith('ipfs://') ? nft.token_uri : 'View Metadata'}
-                      </MuiLink>
-                    </Box>
-                  )}
-                </Stack>
-              </Box>
-            </Box>
-          </Grid>
-        </Grid>
+                  </a>
+                </Button>
+              </div>
+            </div>
+            
+            {/* Attributes/Traits */}
+            {nft.normalized_metadata?.attributes && (
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold mb-3">
+                  Attributes
+                </h3>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {(nft.normalized_metadata.attributes as NFTAttribute[]).map((attr, index) => (
+                    <Card 
+                      key={index}
+                      className="text-center p-3"
+                    >
+                      <p className="text-xs text-muted-foreground truncate">
+                        {attr.trait_type}
+                      </p>
+                      <p className="font-semibold truncate">
+                        {attr.value}
+                      </p>
+                      {attr.trait_count && (
+                        <p className="text-xs text-muted-foreground">
+                          {((attr.trait_count / (nft.normalized_metadata?.attributes?.length || 1)) * 100).toFixed(1)}% have this trait
+                        </p>
+                      )}
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            {/* Token Details */}
+            <div className="mb-6">
+              <h3 className="text-lg font-semibold mb-3">
+                Details
+              </h3>
+              <div className="space-y-2">
+                <div className="flex justify-between">
+                  <span className="text-sm text-muted-foreground">Contract Type</span>
+                  <span>{nft.contract_type || 'ERC721'}</span>
+                </div>
+                <Separator />
+                <div className="flex justify-between">
+                  <span className="text-sm text-muted-foreground">Token Standard</span>
+                  <span>{nft.contract_type || 'ERC721'}</span>
+                </div>
+                <Separator />
+                <div className="flex justify-between">
+                  <span className="text-sm text-muted-foreground">Chain</span>
+                  <span>Ethereum</span>
+                </div>
+                <Separator />
+                {nft.last_token_uri_sync && (
+                  <>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-muted-foreground">Last Updated</span>
+                      <span>{formatDate(new Date(nft.last_token_uri_sync))}</span>
+                    </div>
+                    <Separator />
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
       ) : null}
-    </Container>
+    </div>
   );
 } 

@@ -49,7 +49,7 @@ export function NFTEvaluationModule({ isLoading = false }: NFTEvaluationModulePr
       image: (collection.image && typeof collection.image === 'string' && 
               (collection.image.startsWith('http') || collection.image.startsWith('/'))) 
               ? collection.image 
-              : "",
+              : "/images/nft-placeholder.png",
       floorPrice: collection.floorPrice ? `${formatPrice(collection.floorPrice)} ${collection.floorPriceCurrency || 'ETH'}` : 'N/A',
       // Use floorPriceChange for change if it's a percentage, otherwise show a fixed placeholder
       change: collection.floorPriceChange && !isNaN(parseFloat(collection.floorPriceChange)) 
@@ -122,19 +122,17 @@ export function NFTEvaluationModule({ isLoading = false }: NFTEvaluationModulePr
                           className="mr-2 h-8 w-8 rounded-md object-cover"
                           loading="eager"
                           onError={(e) => {
-                            console.log(`Image failed to load for ${collection.name}:`, collection.image);
-                            // Replace with colorful gradient based on collection name for uniqueness
-                            const target = e.currentTarget;
-                            target.style.display = 'none';
-                            
-                            // Create a new gradient element to replace the image
-                            const placeholder = document.createElement('div');
-                            placeholder.className = 'mr-2 h-8 w-8 rounded-md bg-gradient-to-br from-purple-500/30 to-blue-600/30';
-                            target.parentElement?.insertBefore(placeholder, target);
+                            e.currentTarget.onerror = null;
+                            e.currentTarget.src = '/images/nft-placeholder.png';
                           }}
                         />
                       ) : (
-                        <div className="mr-2 h-8 w-8 rounded-md bg-gradient-to-br from-purple-500/30 to-blue-600/30"></div>
+                        <img 
+                          src={'/images/nft-placeholder.png'}
+                          alt={collection.name}
+                          className="mr-2 h-8 w-8 rounded-md object-cover"
+                          loading="eager"
+                        />
                       )}
                       <div className="font-medium text-white">{collection.name}</div>
                     </div>

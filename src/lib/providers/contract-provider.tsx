@@ -3,9 +3,22 @@
 import React, { createContext, useContext } from "react"
 import { useQuery } from "@tanstack/react-query"
 
+interface Contract {
+  name: string;
+  address: string;
+  status: string;
+  lastAudit: string;
+  risk: string;
+  chain: string;
+}
+
+interface ContractData {
+  contracts: Contract[];
+}
+
 interface ContractContextType {
   isLoading: boolean
-  contractData: any // Replace with proper type
+  contractData: ContractData
   error: Error | null
   refetch: () => void
 }
@@ -43,11 +56,11 @@ export function ContractProvider({ children }: { children: React.ReactNode }) {
               chain: "Ethereum",
             }
           ]
-        }
+        } as ContractData;
       } catch (err) {
         console.error("Failed to fetch contract data:", err);
         // Return fallback data instead of throwing error
-        return { contracts: [] };
+        return { contracts: [] } as ContractData;
       }
     },
     // Don't fail on error, handle gracefully

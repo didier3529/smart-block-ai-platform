@@ -1,9 +1,9 @@
 "use client"
 
-import { Inter } from "next/font/google"
-import { useEffect } from "react"
-
-const inter = Inter({ subsets: ["latin"] })
+import { useEffect } from 'react'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
+import { AlertCircle, RefreshCw } from 'lucide-react'
 
 export default function GlobalError({
   error,
@@ -12,43 +12,53 @@ export default function GlobalError({
   error: Error & { digest?: string }
   reset: () => void
 }) {
+  // Log the error to the console in development
   useEffect(() => {
-    // Log the error to an error reporting service
     console.error('Global error:', error)
   }, [error])
 
+  const handleRefresh = () => {
+    if (typeof window !== 'undefined') {
+      window.location.reload()
+    }
+  }
+
   return (
-    <html lang="en" className="dark">
-      <body className={inter.className}>
-        <div className="min-h-screen flex items-center justify-center bg-gray-50">
-          <div className="max-w-md w-full p-6 bg-white rounded-lg shadow-lg">
-            <h2 className="text-2xl font-bold text-red-600 mb-4">Critical Error</h2>
-            <div className="mb-4 p-4 bg-red-50 rounded text-sm">
-              <p className="text-red-700">
-                A critical error has occurred. Please try refreshing the page.
-              </p>
-              {process.env.NODE_ENV === 'development' && (
-                <pre className="mt-2 text-xs text-red-600 overflow-auto">
-                  {error.message}
-                  {error.digest && `\nDigest: ${error.digest}`}
-                </pre>
-              )}
-            </div>
-            <div className="flex justify-between">
-              <button
-                onClick={() => reset()}
-                className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
-              >
+    <html>
+      <body>
+        <div className="flex min-h-screen items-center justify-center bg-background p-4">
+          <Card className="mx-auto max-w-md shadow-lg">
+            <CardHeader className="bg-destructive/10 dark:bg-destructive/20">
+              <div className="flex items-center gap-2">
+                <AlertCircle className="h-5 w-5 text-destructive" />
+                <CardTitle>Something went wrong!</CardTitle>
+              </div>
+              <CardDescription>
+                The application encountered an unexpected error.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="pt-6">
+              <div className="rounded-md bg-muted p-4">
+                <p className="font-mono text-sm">
+                  {error.message || 'An unknown error occurred'}
+                </p>
+                {error.digest && (
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    Error ID: {error.digest}
+                  </p>
+                )}
+              </div>
+            </CardContent>
+            <CardFooter className="flex gap-2">
+              <Button variant="outline" onClick={() => reset()}>
                 Try again
-              </button>
-              <button
-                onClick={() => window.location.reload()}
-                className="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition-colors"
-              >
-                Reload page
-              </button>
-            </div>
-          </div>
+              </Button>
+              <Button onClick={handleRefresh}>
+                <RefreshCw className="mr-2 h-4 w-4" />
+                Refresh page
+              </Button>
+            </CardFooter>
+          </Card>
         </div>
       </body>
     </html>

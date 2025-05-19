@@ -1,17 +1,37 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { 
-  Container, Grid, Typography, Box, Card, CardMedia, CardContent, 
-  Skeleton, Paper, Divider, Chip, Stack, Avatar, Button
-} from '@mui/material';
-import { NFTCollection, NFTItem } from '@/lib/types/nft-types';
+import { NFTCollection, NFTItem, NFTAttribute } from '@/lib/types/nft-types';
 import { nftService } from '@/lib/services/nft-service';
-import VerifiedIcon from '@mui/icons-material/Verified';
 import { formatCurrency } from '@/lib/utils/format-utils';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useTheme } from '@mui/material/styles';
+import { 
+  Card, 
+  CardContent, 
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardFooter
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Skeleton } from "@/components/ui/skeleton";
+import { 
+  Tabs, 
+  TabsContent, 
+  TabsList, 
+  TabsTrigger 
+} from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Icons } from "@/components/ui/icons";
 
 interface NFTCollectionViewProps {
   collectionAddress: string;
@@ -22,7 +42,6 @@ export default function NFTCollectionView({ collectionAddress }: NFTCollectionVi
   const [nfts, setNfts] = useState<NFTItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const theme = useTheme();
 
   useEffect(() => {
     const fetchCollectionData = async () => {
@@ -64,180 +83,173 @@ export default function NFTCollectionView({ collectionAddress }: NFTCollectionVi
 
   // Format percentage change with color
   const formatPercentageChange = (value: number) => {
-    const color = value >= 0 ? 'success.main' : 'error.main';
+    const color = value >= 0 ? 'text-green-500' : 'text-red-500';
     const formattedValue = value >= 0 ? `+${value.toFixed(2)}%` : `${value.toFixed(2)}%`;
-    return <Typography variant="body2" component="span" color={color}>{formattedValue}</Typography>;
+    return <span className={color}>{formattedValue}</span>;
   };
 
   return (
-    <Container maxWidth="xl" sx={{ py: 4 }}>
+    <div className="container mx-auto px-4 py-8">
       {error ? (
-        <Box sx={{ my: 2, p: 2, bgcolor: 'error.main', color: 'white', borderRadius: 1 }}>
+        <div className="my-4 p-4 bg-red-500 text-white rounded">
           {error}
-        </Box>
+        </div>
       ) : loading ? (
         <>
-          <Box sx={{ display: 'flex', alignItems: 'center', mb: 4 }}>
-            <Skeleton variant="circular" width={80} height={80} sx={{ mr: 2 }} />
-            <Box>
-              <Skeleton width={300} height={40} />
-              <Skeleton width={200} height={24} />
-            </Box>
-          </Box>
-          <Skeleton variant="rectangular" height={200} sx={{ mb: 4 }} />
+          <div className="flex items-center mb-6">
+            <Skeleton className="h-16 w-16 rounded-full mr-4" />
+            <div>
+              <Skeleton className="h-7 w-64 mb-1" />
+              <Skeleton className="h-4 w-40" />
+            </div>
+          </div>
+          <Skeleton className="h-48 w-full mb-6" />
         </>
       ) : collection ? (
         <>
           {/* Collection Header */}
-          <Box sx={{ display: 'flex', alignItems: 'center', mb: 4, flexWrap: { xs: 'wrap', sm: 'nowrap' } }}>
-            <Avatar
-              src={collection.image}
-              alt={collection.name}
-              sx={{ 
-                width: { xs: 64, sm: 80 }, 
-                height: { xs: 64, sm: 80 },
-                mr: 2,
-                boxShadow: theme.shadows[2]
-              }}
-            />
-            <Box>
-              <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <Typography variant="h4" component="h1" gutterBottom fontWeight="bold">
+          <div className="flex items-center mb-6 flex-wrap sm:flex-nowrap">
+            <Avatar className="h-16 w-16 mr-4 border shadow">
+              <AvatarImage src={collection.image} alt={collection.name} />
+              <AvatarFallback>{collection.name?.substring(0, 2)}</AvatarFallback>
+            </Avatar>
+            <div>
+              <div className="flex items-center">
+                <h1 className="text-2xl font-bold">
                   {collection.name}
-                </Typography>
+                </h1>
                 {collection.verified && (
-                  <VerifiedIcon color="primary" sx={{ ml: 1 }} />
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger>
+                        <Icons.verified className="ml-2 h-5 w-5 text-blue-500" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Verified Collection</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                 )}
-              </Box>
-              <Stack direction="row" spacing={2} sx={{ mb: 1 }}>
-                <Typography variant="body1" color="text.secondary">
+              </div>
+              <div className="flex space-x-4 mt-1">
+                <span className="text-sm text-muted-foreground">
                   {collection.itemCount?.toLocaleString() || '0'} items
-                </Typography>
-                <Typography variant="body1" color="text.secondary">
+                </span>
+                <span className="text-sm text-muted-foreground">
                   {collection.ownerCount?.toLocaleString() || 'Multiple'} owners
-                </Typography>
-              </Stack>
-            </Box>
-          </Box>
+                </span>
+              </div>
+            </div>
+          </div>
 
           {/* Collection Stats */}
-          <Paper elevation={2} sx={{ p: 3, mb: 4, borderRadius: 2 }}>
-            <Grid container spacing={3}>
-              <Grid item xs={12} sm={6} md={3}>
-                <Typography variant="subtitle2" color="text.secondary">
-                  Floor Price
-                </Typography>
-                <Typography variant="h6">
-                  {formatCurrency(collection.floorPrice || 0, 'ETH')} ETH
-                </Typography>
-                {formatPercentageChange(collection.floorPriceChange || 0)}
-              </Grid>
+          <Card className="mb-6">
+            <CardContent className="p-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+                <div>
+                  <h3 className="text-sm text-muted-foreground mb-1">
+                    Floor Price
+                  </h3>
+                  <p className="text-lg font-medium">
+                    {formatCurrency(collection.floorPrice || 0, 'ETH')} ETH
+                  </p>
+                  {formatPercentageChange(collection.floorPriceChange || 0)}
+                </div>
 
-              <Grid item xs={12} sm={6} md={3}>
-                <Typography variant="subtitle2" color="text.secondary">
-                  Volume
-                </Typography>
-                <Typography variant="h6">
-                  {formatCurrency(collection.totalVolume || 0, 'USD')}
-                </Typography>
-              </Grid>
+                <div>
+                  <h3 className="text-sm text-muted-foreground mb-1">
+                    Volume
+                  </h3>
+                  <p className="text-lg font-medium">
+                    {formatCurrency(collection.totalVolume || 0, 'USD')}
+                  </p>
+                </div>
 
-              <Grid item xs={12} sm={6} md={3}>
-                <Typography variant="subtitle2" color="text.secondary">
-                  Items
-                </Typography>
-                <Typography variant="h6">
-                  {collection.itemCount?.toLocaleString() || '0'}
-                </Typography>
-              </Grid>
+                <div>
+                  <h3 className="text-sm text-muted-foreground mb-1">
+                    Items
+                  </h3>
+                  <p className="text-lg font-medium">
+                    {collection.itemCount?.toLocaleString() || '0'}
+                  </p>
+                </div>
 
-              <Grid item xs={12} sm={6} md={3}>
-                <Typography variant="subtitle2" color="text.secondary">
-                  Owners
-                </Typography>
-                <Typography variant="h6">
-                  {collection.ownerCount?.toLocaleString() || '0'}
-                </Typography>
-              </Grid>
-            </Grid>
-          </Paper>
+                <div>
+                  <h3 className="text-sm text-muted-foreground mb-1">
+                    Owners
+                  </h3>
+                  <p className="text-lg font-medium">
+                    {collection.ownerCount?.toLocaleString() || '0'}
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
           {/* Collection Description */}
           {collection.description && (
-            <Paper elevation={1} sx={{ p: 3, mb: 4, borderRadius: 2 }}>
-              <Typography variant="h6" gutterBottom>
-                Description
-              </Typography>
-              <Typography variant="body1">
-                {collection.description}
-              </Typography>
-            </Paper>
+            <Card className="mb-6">
+              <CardContent className="p-6">
+                <h3 className="text-lg font-semibold mb-2">
+                  Description
+                </h3>
+                <p>
+                  {collection.description}
+                </p>
+              </CardContent>
+            </Card>
           )}
 
           {/* NFTs in Collection */}
-          <Typography variant="h5" component="h2" gutterBottom sx={{ mt: 6, mb: 3 }}>
+          <h2 className="text-xl font-bold mt-8 mb-4">
             NFTs in this Collection
-          </Typography>
+          </h2>
 
-          <Grid container spacing={3}>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {nfts.map((nft) => (
-              <Grid item xs={12} sm={6} md={4} lg={3} key={`${nft.token_address}-${nft.token_id}`}>
-                <Link 
-                  href={`/nft/item/${nft.token_address}/${nft.token_id}`}
-                  style={{ textDecoration: 'none', color: 'inherit' }}
-                >
-                  <Card 
-                    elevation={2} 
-                    sx={{ 
-                      height: '100%', 
-                      display: 'flex', 
-                      flexDirection: 'column',
-                      transition: 'transform 0.2s, box-shadow 0.2s',
-                      '&:hover': {
-                        transform: 'translateY(-4px)',
-                        boxShadow: theme.shadows[8],
-                      }
-                    }}
-                  >
-                    <CardMedia
-                      component="img"
-                      height={250}
-                      image={nftService.getNFTImageUrl(nft) || '/images/nft-placeholder.png'}
+              <Link 
+                href={`/nft/item/${nft.token_address}/${nft.token_id}`}
+                key={`${nft.token_address}-${nft.token_id}`}
+                className="block"
+              >
+                <Card className="h-full transition-all duration-200 hover:shadow-lg hover:-translate-y-1">
+                  <div className="relative aspect-square w-full overflow-hidden">
+                    <Image
+                      src={nftService.getNFTImageUrl(nft) || '/images/nft-placeholder.png'}
                       alt={nft.normalized_metadata?.name || `NFT #${nft.token_id}`}
-                      sx={{ objectFit: 'cover' }}
+                      fill
+                      className="object-cover"
                     />
-                    <CardContent>
-                      <Typography variant="h6" component="h3" noWrap>
-                        {nft.normalized_metadata?.name || `#${nft.token_id}`}
-                      </Typography>
-                      
-                      <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                        Token ID: {nft.token_id?.substring(0, 8)}...
-                      </Typography>
-                      
-                      {nft.normalized_metadata?.attributes && (
-                        <Box sx={{ mt: 1 }}>
-                          <Stack direction="row" spacing={0.5} flexWrap="wrap" gap={0.5}>
-                            {(nft.normalized_metadata.attributes as any[]).slice(0, 3).map((attr, index) => (
-                              <Chip 
-                                key={index}
-                                label={`${attr.trait_type}: ${attr.value}`} 
-                                size="small"
-                                variant="outlined"
-                                sx={{ maxWidth: '100%', height: 'auto', '& .MuiChip-label': { whiteSpace: 'normal' } }}
-                              />
-                            ))}
-                          </Stack>
-                        </Box>
-                      )}
-                    </CardContent>
-                  </Card>
-                </Link>
-              </Grid>
+                  </div>
+                  <CardContent className="p-4">
+                    <h3 className="font-medium truncate">
+                      {nft.normalized_metadata?.name || `#${nft.token_id}`}
+                    </h3>
+                    
+                    <p className="text-sm text-muted-foreground mb-2">
+                      Token ID: {nft.token_id?.substring(0, 8)}...
+                    </p>
+                    
+                    {nft.normalized_metadata?.attributes && (
+                      <div className="mt-2 flex flex-wrap gap-1">
+                        {(nft.normalized_metadata.attributes as NFTAttribute[]).slice(0, 3).map((attr, index) => (
+                          <Badge 
+                            key={index}
+                            variant="outline"
+                            className="truncate max-w-full text-xs"
+                          >
+                            {attr.trait_type}: {attr.value}
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </Link>
             ))}
-          </Grid>
+          </div>
         </>
       ) : null}
-    </Container>
+    </div>
   );
 } 
